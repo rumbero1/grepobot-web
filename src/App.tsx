@@ -1,22 +1,30 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
-
-const Dashboard: React.FC = () => {
-    return (
-        <div>
-            <h1>Dashboard</h1>
-            <p>Welcome to the Dashboard!</p>
-        </div>
-    );
-};
 
 const App: React.FC = () => {
+    const features = [
+        'Real-time data processing',
+        'User-friendly interface',
+        'Advanced analytics',
+        'Multi-platform support',
+        'Seamless integrations'
+    ];
+
     return (
-        <Router>
-            <Switch>
-                <Route path="/" component={Dashboard} />
-            </Switch>
-        </Router>
+        <div>
+            <h1>GrepoBot Pro</h1>
+            <nav>
+                <ul>
+                    <li><a href="/landing">Landing</a></li>
+                    <li><a href="/admin">Admin</a></li>
+                </ul>
+            </nav>
+            <h2>Upcoming Features:</h2>
+            <ul>
+                {features.map((feature, index) => (
+                    <li key={index}>{feature}</li>
+                ))}
+            </ul>
+        </div>
     );
 };
 
