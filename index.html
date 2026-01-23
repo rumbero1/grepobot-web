@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GrepoBot Pro - Automatización de Élite</title>
     
-    <!-- CONEXIÓN CON PAYPAL (Tu Client ID de Sandbox) -->
+    <!-- CONEXIÓN CON PAYPAL -->
     <script src="https://www.paypal.com/sdk/js?client-id=ARI8xtvx-zlykSa7RFIka_g5C3_iF8-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGs&currency=USD"></script>
 
     <style>
@@ -36,20 +36,20 @@
         .cta-button { background: var(--primary); color: white; padding: 15px 40px; border: none; border-radius: 5px; font-size: 18px; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4); transition: transform 0.2s; }
         .cta-button:hover { transform: translateY(-2px); }
 
-        /* MANUAL DE USO (RESTITUÍDO) */
+        /* MANUAL DE USO (RECUPERADO) */
         .guide-section { background: #1a1a1a; padding: 80px 20px; border-top: 1px solid #333; }
         .guide-container { max-width: 800px; margin: 0 auto; }
         .guide-item { margin-bottom: 30px; background: #252525; padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary); }
         .guide-item h3 { color: #fff; margin-top: 0; }
         .guide-item p { color: #ccc; font-size: 14px; }
 
-        /* GALERÍA (CON TAMAÑO ARREGLADO) */
+        /* GALERÍA (FOTOS PEQUEÑAS) */
         .gallery-section { padding: 60px 20px; text-align: center; background: #151515; }
         .gallery-grid { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; }
         .gallery-item { text-align: center; }
         .gallery-item img { 
-            width: 300px;       /* Ancho fijo más pequeño */
-            height: 200px;      /* Alto fijo */
+            width: 300px;
+            height: 200px;
             object-fit: cover;  
             border-radius: 10px; 
             border: 2px solid #333; 
@@ -86,7 +86,7 @@
         .plan-price { font-size: 20px; color: var(--gold); font-weight: bold; display: block; }
         .plan-save { font-size: 11px; color: #4caf50; display: block; margin-top: 5px; }
 
-        /* CHATBOT (RESTITUÍDO) */
+        /* CHATBOT (RECUPERADO) */
         .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999; }
         .chat-btn { background: var(--primary); width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; transition: 0.3s; }
         .chat-btn:hover { transform: scale(1.1); }
@@ -123,7 +123,7 @@
     <button class="cta-button" onclick="scrollToPortal()">PRUEBA DE 7 DÍAS</button>
 </section>
 
-<!-- MANUAL DE USO (AQUÍ ESTÁ) -->
+<!-- MANUAL DE USO (AQUÍ ESTÁ DE NUEVO) -->
 <section id="guide" class="guide-section">
     <div class="guide-container">
         <h2 class="section-title">Manual de Inicio Rápido</h2>
@@ -146,7 +146,7 @@
     </div>
 </section>
 
-<!-- GALERÍA VISUAL (FOTOS PEQUEÑAS) -->
+<!-- GALERÍA VISUAL -->
 <section id="gallery" class="gallery-section">
     <h2>Interfaz del Bot</h2>
     <div class="gallery-grid">
@@ -247,7 +247,10 @@
 </footer>
 
 <script>
-    const API = 'http://localhost:3000/api';
+    // --- AQUÍ ESTÁ EL CAMBIO CRUCIAL PARA RENDER ---
+    const API = 'https://grepobot-web.onrender.com/api';
+    // ------------------------------------------------
+
     let currentUserId = null;
     let selectedPlanId = '1_MES';
 
