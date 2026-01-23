@@ -1,14 +1,12 @@
-<html>
-<head>
-    <title>Grepobot Web</title>
-</head>
-<body>
-    <h1>Welcome to Grepobot Web</h1>
-    <button onclick="openTampermonkey()">INSTALAR BOT</button>
-    <script>
-        function openTampermonkey() {
-            window.open('https://tampermonkey.net/', '_blank');
-        }
-    </script>
-</body>
-</html>
+// Function to open the script directly in Tampermonkey
+function descargarArchivo() {
+    const scriptContent = `// ==UserScript==\n// @name        Your Script Name\n// @namespace   http://tampermonkey.net/\n// @version     0.1\n// @description  Your description here\n// @match      *://*/*\n// @grant       none\n// ==/UserScript==\n\n(function() {\n    'use strict';\n    // Your script code here\n})();`;
+    const encodedContent = encodeURIComponent(scriptContent);
+    const dataUrl = `data:text/javascript;charset=utf-8,//%20%3D%3DUserScript%3D%3D%0A%23%20@name%20Your%20Script%20Name%0A%23%20@namespace%20http%3A%2F%2Ftampermonkey.net%2F%0A%23%20@version%200.1%0A%23%20@description%20Your%20description%20here%0A%23%20@match%20*%3A%2F%2F*%2F*%0A%23%20@grant%20none%0A%3D%3D%2FUserScript%3D%3D%0A%0A(function()%20%7B%0A%20%20%27use%20strict%27%3B%0A%20%20%2F%2F%20Your%20script%20code%20here%0A%7D%29();`;
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUrl);
+    link.setAttribute('download', 'script.user.js');
+    link.textContent = 'Open Script in Tampermonkey';
+    document.body.appendChild(link);
+}
+
