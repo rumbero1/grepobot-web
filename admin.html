@@ -1,50 +1,173 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <title>Admin - GrepoBot Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0a14; color: #e0e0e0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { color: #4caf50; margin-bottom: 30px; text-align: center; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: #1e1e2e; padding: 20px; border-radius: 10px; border-left: 4px solid #4caf50; }
+        .stat-value { font-size: 32px; font-weight: bold; color: #4caf50; margin: 10px 0; }
+        .stat-label { color: #888; font-size: 14px; }
+        .section { background: #1e1e2e; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        h2 { color: #60a5fa; margin-bottom: 15px; font-size: 18px; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #2a2a3a; padding: 12px; text-align: left; color: #888; font-weight: 600; border-bottom: 1px solid #444; }
+        td { padding: 12px; border-bottom: 1px solid #333; }
+        tr:hover { background: #252535; }
+        .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+        .badge.success { background: #1a2a1a; color: #4caf50; }
+        .badge.danger { background: #2a1a1a; color: #ff5252; }
+        .btn { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn:hover { background: #45a049; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Dashboard</h1>
-        <div id="userStats">
-            <h2>User Statistics</h2>
-            <p id="userCount">Loading...</p>
+
+<div class="container">
+    <h1>🔐 Admin Dashboard - GrepoBot</h1>
+    
+    <button class="btn" onclick="cargarDatos()">🔄 Actualizar</button>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-label">Usuarios Registrados</div>
+            <div class="stat-value" id="total-usuarios">0</div>
         </div>
-        <div id="loginLogs">
-            <h2>Login Logs</h2>
-            <ul id="logsList"></ul>
+        <div class="stat-card">
+            <div class="stat-label">Descargas del Bot</div>
+            <div class="stat-value" id="total-descargas">0</div>
         </div>
-        <div id="downloads">
-            <h2>Downloads</h2>
-            <p id="downloadsCount">Loading...</p>
+        <div class="stat-card">
+            <div class="stat-label">Licencias Activas</div>
+            <div class="stat-value" id="licencias-activas">0</div>
         </div>
-        <div id="realtimeData">
-            <h2>Real-time Data</h2>
-            <p id="realTime"></p>
+        <div class="stat-card">
+            <div class="stat-label">Logins 24h</div>
+            <div class="stat-value" id="logins-24h">0</div>
         </div>
     </div>
-    <script>
-        $(document).ready(function () {
-            // Fetch user statistics
-            $.get('/api/admin/stats', function(data) {
-                $('#userCount').text(data.userCount);
-                $('#downloadsCount').text(data.downloadsCount);
-                data.loginLogs.forEach(log => {
-                    $('#logsList').append(`<li>${log}</li>`);
-                });
-                $('#realTime').text(data.realtimeData);
-            });
-        });
-    </script>
-    <style>
-        body { font-family: Arial, sans-serif; }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        h1, h2 { color: #333; }
-        #userStats, #loginLogs, #downloads, #realtimeData { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
-    </style>
+
+    <div class="section">
+        <h2>📋 Últimos Logins</h2>
+        <table id="tabla-logins">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Fecha/Hora</th>
+                    <th>IP</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #888;">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>⬇️ Descargas Recientes</h2>
+        <table id="tabla-descargas">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Fecha Descarga</th>
+                    <th>IP</th>
+                    <th>Licencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="4" style="text-align: center; color: #888;">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2>👥 Todos los Usuarios</h2>
+        <table id="tabla-usuarios">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Registro</th>
+                    <th>Licencia Expira</th>
+                    <th>Días</th>
+                    <th>Descargó</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="5" style="text-align: center; color: #888;">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function cargarDatos() {
+    try {
+        const res = await fetch('/api/admin/stats');
+        const data = await res.json();
+
+        document.getElementById('total-usuarios').textContent = data.totalUsuarios || 0;
+        document.getElementById('total-descargas').textContent = data.totalDescargas || 0;
+        document.getElementById('licencias-activas').textContent = data.licenciasActivas || 0;
+        document.getElementById('logins-24h').textContent = data.logins24h || 0;
+
+        const tbLogins = document.getElementById('tabla-logins').querySelector('tbody');
+        if (data.logins && data.logins.length > 0) {
+            tbLogins.innerHTML = data.logins.map(login => `
+                <tr>
+                    <td>${login.username}</td>
+                    <td>${new Date(login.fecha).toLocaleString()}</td>
+                    <td>${login.ip || 'N/A'}</td>
+                    <td><span class="badge ${login.success ? 'success' : 'danger'}">${login.success ? '✅ OK' : '❌ Error'}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            tbLogins.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">Sin datos</td></tr>';
+        }
+
+        const tbDescargas = document.getElementById('tabla-descargas').querySelector('tbody');
+        if (data.descargas && data.descargas.length > 0) {
+            tbDescargas.innerHTML = data.descargas.map(desc => `
+                <tr>
+                    <td>${desc.username}</td>
+                    <td>${new Date(desc.fecha_descarga).toLocaleString()}</td>
+                    <td>${desc.ip || 'N/A'}</td>
+                    <td><span class="badge ${desc.diasRestantes > 0 ? 'success' : 'danger'}">${desc.diasRestantes > 0 ? '✅ Activa' : '❌ Caducada'}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            tbDescargas.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">Sin descargas</td></tr>';
+        }
+
+        const tbUsuarios = document.getElementById('tabla-usuarios').querySelector('tbody');
+        if (data.usuarios && data.usuarios.length > 0) {
+            tbUsuarios.innerHTML = data.usuarios.map(user => `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${new Date(user.fecha_registro).toLocaleString()}</td>
+                    <td>${new Date(user.fecha_expiracion).toLocaleString()}</td>
+                    <td><strong style="color: ${user.diasRestantes > 0 ? '#4caf50' : '#ff5252'}">${user.diasRestantes}</strong></td>
+                    <td><span class="badge ${user.yaDescargo ? 'success' : 'danger'}">${user.yaDescargo ? '✅ Sí' : '❌ No'}</span></td>
+                </tr>
+            `).join('');
+        } else {
+            tbUsuarios.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #888;">Sin usuarios</td></tr>';
+        }
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error: ' + error.message);
+    }
+}
+
+cargarDatos();
+setInterval(cargarDatos, 30000);
+</script>
+
 </body>
 </html>
