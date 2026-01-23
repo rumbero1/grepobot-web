@@ -1,19 +1,20 @@
-'use strict';
-
 const express = require('express');
-const path = require('path');
-
+const bodyParser = require('body-parser');
+const cors = require('cors');
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Serve static files from the 'dist' folder
-app.use(express.static(path.join(__dirname, 'dist')));
+// Middleware
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-// Serve React app at the '/app' route
-app.get('/app/*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Sample route
+app.get('/', (req, res) => {
+    res.send('Hello World!');
 });
 
-const PORT = process.env.PORT || 3000;
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
