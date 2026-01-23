@@ -21,7 +21,6 @@ app.post('/api/registro', (req, res) => {
   db.run("INSERT INTO usuarios (username, password) VALUES (?, ?)", [username, password], function(err) {
     if (err) return res.json({ success: false, error: 'Usuario ya existe' });
     
-    // Calcular fecha de expiración (7 días desde ahora)
     const ahora = new Date();
     const expiracion = new Date(ahora.getTime() + 7 * 24 * 60 * 60 * 1000);
     
@@ -35,7 +34,6 @@ app.post('/api/login', (req, res) => {
   db.get("SELECT u.id, l.dias_licencia, l.fecha_expiracion FROM usuarios u JOIN licencias l ON u.id = l.usuario_id WHERE u.username = ? AND u.password = ?", [username, password], (err, row) => {
     if (!row) return res.json({ success: false });
     
-    // Calcular días restantes
     const ahora = new Date();
     const expiracion = new Date(row.fecha_expiracion);
     const diasRestantes = Math.ceil((expiracion - ahora) / (1000 * 60 * 60 * 24));
@@ -52,7 +50,6 @@ app.post('/api/paypal/capture-order', (req, res) => {
   const { usuarioId, planId } = req.body;
   let dias = planId === '12_MESES' ? 365 : (planId === '6_MESES' ? 180 : 30);
   
-  // Calcular nueva fecha de expiración
   const ahora = new Date();
   const nuevaExpiracion = new Date(ahora.getTime() + dias * 24 * 60 * 60 * 1000);
   
@@ -66,7 +63,7 @@ function generarCargador(usuarioId) {
   return `// ==UserScript==
 // @name         GrepoBot Pro Elite
 // @namespace    http://tampermonkey.net/
-// @version      5.2
+// @version      5.3
 // @description  Bot indetectable con licencia segura y verificación diaria
 // @author       GrepoTeam
 // @match        https://*.grepolis.com/game/*
@@ -110,7 +107,6 @@ function generarCargador(usuarioId) {
     onload: function(response) {
       if (response.status === 200) {
         try {
-          // ✅ LICENCIA VÁLIDA - INYECTAR BOT
           console.log("✅ Licencia verificada correctamente");
           
           textoCarguE.innerHTML = '✅ LICENCIA VÁLIDA<br><span style="font-size:14px;color:#4caf50;">Iniciando bot...</span>';
@@ -118,7 +114,6 @@ function generarCargador(usuarioId) {
           setTimeout(() => {
             pantallaCarga.remove();
             
-            // INYECTAR BOT REAL
             const realWindow = window.unsafeWindow || window;
             const script = realWindow.document.createElement('script');
             script.textContent = response.responseText;
@@ -133,7 +128,6 @@ function generarCargador(usuarioId) {
           pantallaCarga.innerHTML = '<div style="font-size:20px;color:red;"><b>❌ ERROR CRÍTICO</b><br>' + e.message + '</div>';
         }
       } else {
-        // ❌ LICENCIA CADUCADA - NO INYECTAR BOT
         console.error("❌ Licencia caducada o inválida");
         
         pantallaCarga.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2a1a1a 100%)';
@@ -146,9 +140,6 @@ function generarCargador(usuarioId) {
         pantallaCarga.innerHTML = '';
         pantallaCarga.appendChild(textoCarguE);
         pantallaCarga.appendChild(textoExpiracion);
-        
-        // MANTENER LA PANTALLA INDEFINIDAMENTE (EL BOT NO FUNCIONA)
-        // No remover pantallaCarga
       }
     },
     onerror: function(err) {
@@ -178,31 +169,28 @@ app.post('/api/obtener-codigo-real', (req, res) => {
       return res.status(403).json({ error: "Usuario no encontrado" });
     }
     
-    // VERIFICAR SI LA LICENCIA AÚN ES VÁLIDA
     const ahora = new Date();
     const expiracion = new Date(row.fecha_expiracion);
     
     if (ahora > expiracion) {
-      // ❌ LICENCIA EXPIRADA - NO ENVIAR BOT
       return res.status(403).json({ error: "Licencia expirada" });
     }
     
-    // ✅ LICENCIA VÁLIDA - ENVIAR BOT
     fs.readFile(path.join(__dirname, 'bot_original.js'), 'utf8', (err, data) => {
       if (err) return res.status(500).send("");
       
       const diasRestantes = Math.ceil((expiracion - ahora) / (1000 * 60 * 60 * 24));
       
-      // INYECTAR BANNER DE PRUEBA EN EL BOT
+      // BANNER ABAJO A LA IZQUIERDA (NO MOLESTA)
       const botConBanner = `
 // 🔒 LICENCIA ACTIVA - DIAS RESTANTES: ${diasRestantes}
 ${data}
 
-// MOSTRAR BANNER EN EL JUEGO
+// MOSTRAR BANNER ABAJO A LA IZQUIERDA
 setTimeout(() => {
   const banner = document.createElement('div');
-  banner.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;background:#1a2a1a;border:2px solid #4caf50;border-radius:8px;padding:15px 20px;color:#4caf50;font-family:Arial,sans-serif;font-size:13px;font-weight:bold;text-align:center;box-shadow:0 0 20px rgba(76,175,80,0.4);';
-  banner.innerHTML = '📊 PRUEBA GRATIS<br>⏱️ ${diasRestantes} días<br><a href="https://grepobot-web.onrender.com" target="_blank" style="color:#4caf50;text-decoration:underline;cursor:pointer;">🔗 COMPRAR</a>';
+  banner.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:10000;background:#1a2a1a;border:2px solid #4caf50;border-radius:8px;padding:12px 16px;color:#4caf50;font-family:Arial,sans-serif;font-size:12px;font-weight:bold;text-align:center;box-shadow:0 0 20px rgba(76,175,80,0.4);opacity:0.85;';
+  banner.innerHTML = '📊 PRUEBA<br>⏱️ ${diasRestantes}d<br><a href="https://grepobot-web.onrender.com" target="_blank" style="color:#4caf50;text-decoration:underline;cursor:pointer;font-size:11px;">Comprar</a>';
   document.body.appendChild(banner);
 }, 2000);
       `;
