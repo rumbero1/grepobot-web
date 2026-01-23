@@ -40,21 +40,28 @@ app.post('/api/login', (req, res) => {
 
 // GENERADOR DE SCRIPT
 function generarCargador(usuarioId) {
-    // URL DE RENDER - IMPORTANTE
     const API_URL = "https://grepobot-web.onrender.com/api/obtener-codigo-real";
     
     return `// ==UserScript==
 // @name         GrepoBot Pro Elite
 // @namespace    http://tampermonkey.net/
-// @version      4.5
-// @description  Bot indetectable
+// @version      4.6
+// @description  Bot indetectable cargado desde servidor seguro.
+// @author       GrepoTeam
 // @match        http://*.grepolis.com/*
 // @match        https://*.grepolis.com/*
 // @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        window.focus
 // ==/UserScript==
 
 (function() {
     'use strict';
+    console.log("🔒 GrepoBot: Conectando...");
+
     GM_xmlhttpRequest({
         method: "POST",
         url: "${API_URL}",
@@ -62,38 +69,19 @@ function generarCargador(usuarioId) {
         data: JSON.stringify({ u: "${usuarioId}" }),
         onload: function(response) {
             if (response.status === 200) {
-                try { eval(response.responseText); } catch (e) { console.error(e); }
-            } else { alert("LICENCIA CADUCADA"); }
-        }
+                try {
+                    // Hack para dar acceso total al bot original
+                    var unsafeWindow = window.unsafeWindow || window;
+                    eval(response.responseText);
+                    console.log("✅ GrepoBot: Código inyectado y LISTO.");
+                } catch (e) {
+                    console.error("❌ Error ejecutando bot:", e);
+                }
+            } else {
+                alert("⛔ LICENCIA CADUCADA");
+            }
+        },
+        onerror: function(err) { console.log("Error conexion", err); }
     });
 })();`;
 }
-
-app.get('/api/descargar/:id/GrepoBot.user.js', (req, res) => {
-    res.setHeader('Content-disposition', 'attachment; filename=GrepoBot.user.js');
-    res.send(generarCargador(req.params.id));
-});
-
-app.post('/api/obtener-codigo-real', (req, res) => {
-    const { u } = req.body;
-    db.get("SELECT dias_licencia FROM usuarios WHERE id = ?", [u], (err, row) => {
-        if (!row || row.dias_licencia <= 0) return res.status(403).send("alert('Renueva licencia');");
-        
-        fs.readFile(path.join(__dirname, 'bot_original.js'), 'utf8', (err, data) => {
-            if (err) return res.status(500).send("");
-            res.send(data);
-        });
-    });
-});
-
-// PAYPAL FALSO PARA QUE FUNCIONE EL BOTÓN
-app.post('/api/paypal/create-order', (req, res) => { res.json({ id: "ORDER_" + Date.now() }); });
-app.post('/api/paypal/capture-order', (req, res) => {
-    const { usuarioId, planId } = req.body;
-    let dias = planId === '12_MESES' ? 365 : (planId === '6_MESES' ? 180 : 30);
-    db.run("UPDATE usuarios SET dias_licencia = dias_licencia + ? WHERE id = ?", [dias, usuarioId], (err) => {
-        res.json({ status: "COMPLETED" });
-    });
-});
-
-app.listen(PORT, () => console.log(`Server en ${PORT}`));
