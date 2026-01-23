@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
-const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -14,20 +13,11 @@ app.use(express.static(path.join(__dirname)));
 // Base de datos persistente
 const db = new sqlite3.Database('./grepobot.db');
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY,
-    username TEXT UNIQUE,
-    password TEXT
-  )`);
-  db.run(`CREATE TABLE IF NOT EXISTS licencias (
-    id INTEGER PRIMARY KEY,
-    usuario_id INTEGER,
-    dias_licencia INTEGER DEFAULT 7,
-    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)`);
+  db.run(`CREATE TABLE IF NOT EXISTS licencias (id INTEGER PRIMARY KEY, usuario_id INTEGER, dias_licencia INTEGER DEFAULT 7, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP)`);
 });
 
-// Registro
+// Registro/Login
 app.post('/api/registro', (req, res) => {
   const { username, password } = req.body;
   db.run("INSERT INTO usuarios (username, password) VALUES (?, ?)", [username, password], function(err) {
@@ -37,7 +27,6 @@ app.post('/api/registro', (req, res) => {
   });
 });
 
-// Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   db.get("SELECT u.id, l.dias_licencia FROM usuarios u JOIN licencias l ON u.id = l.usuario_id WHERE u.username = ? AND u.password = ?", [username, password], (err, row) => {
@@ -46,7 +35,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// PayPal simulado (sandbox)
+// PayPal falso (simulado)
 app.post('/api/paypal/create-order', (req, res) => {
   res.json({ id: "ORDER_" + Date.now() });
 });
@@ -58,7 +47,7 @@ app.post('/api/paypal/capture-order', (req, res) => {
   });
 });
 
-// Cargador con todos los permisos y URL correcta
+// Generador del cargador seguro
 function generarCargador(usuarioId) {
   const API_URL = "https://grepobot-web.onrender.com/api/obtener-codigo-real";
   return `// ==UserScript==
@@ -119,19 +108,19 @@ app.get('/api/descargar/:id/GrepoBot.user.js', (req, res) => {
   res.send(generarCargador(req.params.id));
 });
 
-// Entregar código del bot (con escape automático si es necesario)
+// Entregar código del bot
 app.post('/api/obtener-codigo-real', (req, res) => {
   const { u } = req.body;
   db.get("SELECT dias_licencia FROM licencias l JOIN usuarios u ON l.usuario_id = u.id WHERE u.id = ?", [u], (err, row) => {
     if (!row || row.dias_licencia <= 0) return res.status(403).send("alert('Renueva licencia');");
     fs.readFile(path.join(__dirname, 'bot_original.js'), 'utf8', (err, data) => {
       if (err) return res.status(500).send("");
-      res.type('application/javascript').send(data);
+      res.send(data);
     });
   });
 });
 
-// Servir la web principal
+// Servir la web
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
