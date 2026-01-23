@@ -1,0 +1,29 @@
+:root {
+    --primary-color: #61dafb;
+    --secondary-color: #282c34;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    background: var(--secondary-color);
+    color: white;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin: 0;
+}
+
+button {
+    background-color: var(--primary-color);
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: rgba(97, 218, 251, 0.8);
+}
