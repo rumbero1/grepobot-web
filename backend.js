@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 
 const app = express();
 app.use(cors());
@@ -13,11 +14,20 @@ app.use(express.static(path.join(__dirname)));
 // Base de datos persistente
 const db = new sqlite3.Database('./grepobot.db');
 db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)`);
-  db.run(`CREATE TABLE IF NOT EXISTS licencias (id INTEGER PRIMARY KEY, usuario_id INTEGER, dias_licencia INTEGER DEFAULT 7, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  db.run(`CREATE TABLE IF NOT EXISTS usuarios (
+    id INTEGER PRIMARY KEY,
+    username TEXT UNIQUE,
+    password TEXT
+  )`);
+  db.run(`CREATE TABLE IF NOT EXISTS licencias (
+    id INTEGER PRIMARY KEY,
+    usuario_id INTEGER,
+    dias_licencia INTEGER DEFAULT 7,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 });
 
-// Registro/Login
+// Registro
 app.post('/api/registro', (req, res) => {
   const { username, password } = req.body;
   db.run("INSERT INTO usuarios (username, password) VALUES (?, ?)", [username, password], function(err) {
@@ -27,6 +37,7 @@ app.post('/api/registro', (req, res) => {
   });
 });
 
+// Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   db.get("SELECT u.id, l.dias_licencia FROM usuarios u JOIN licencias l ON u.id = l.usuario_id WHERE u.username = ? AND u.password = ?", [username, password], (err, row) => {
@@ -35,7 +46,19 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// Generador del cargador seguro
+// PayPal simulado (sandbox)
+app.post('/api/paypal/create-order', (req, res) => {
+  res.json({ id: "ORDER_" + Date.now() });
+});
+app.post('/api/paypal/capture-order', (req, res) => {
+  const { usuarioId, planId } = req.body;
+  let dias = planId === '12meses' ? 365 : (planId === '6meses' ? 180 : 30);
+  db.run("UPDATE licencias SET dias_licencia = dias_licencia + ? WHERE usuario_id = ?", [dias, usuarioId], (err) => {
+    res.json({ status: "COMPLETED" });
+  });
+});
+
+// Cargador con todos los permisos y URL correcta
 function generarCargador(usuarioId) {
   const API_URL = "https://grepobot-web.onrender.com/api/obtener-codigo-real";
   return `// ==UserScript==
@@ -49,6 +72,7 @@ function generarCargador(usuarioId) {
 // @grant        unsafeWindow
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_deleteValue
 // @grant        window.focus
 // @connect      grepobot-web.onrender.com
 // @run-at       document-idle
@@ -68,11 +92,7 @@ function generarCargador(usuarioId) {
           // 💡 INYECCIÓN EN EL CONTEXTO REAL DEL JUEGO
           const realWindow = window.unsafeWindow || window;
           const script = realWindow.document.createElement('script');
-          script.textContent = \`
-            (() => {
-              ${response.responseText}
-            })();
-          \`;
+          script.textContent = response.responseText;
           (realWindow.document.head || realWindow.document.documentElement).appendChild(script);
           script.remove();
           console.log("✅ GrepoBot: Código inyectado y ejecutado.");
@@ -99,31 +119,19 @@ app.get('/api/descargar/:id/GrepoBot.user.js', (req, res) => {
   res.send(generarCargador(req.params.id));
 });
 
-// Entregar código del bot
+// Entregar código del bot (con escape automático si es necesario)
 app.post('/api/obtener-codigo-real', (req, res) => {
   const { u } = req.body;
   db.get("SELECT dias_licencia FROM licencias l JOIN usuarios u ON l.usuario_id = u.id WHERE u.id = ?", [u], (err, row) => {
     if (!row || row.dias_licencia <= 0) return res.status(403).send("alert('Renueva licencia');");
     fs.readFile(path.join(__dirname, 'bot_original.js'), 'utf8', (err, data) => {
       if (err) return res.status(500).send("");
-      res.send(data);
+      res.type('application/javascript').send(data);
     });
   });
 });
 
-// PayPal falso (simulado)
-app.post('/api/paypal/create-order', (req, res) => {
-  res.json({ id: "ORDER_" + Date.now() });
-});
-app.post('/api/paypal/capture-order', (req, res) => {
-  const { usuarioId, planId } = req.body;
-  let dias = planId === '12meses' ? 365 : (planId === '6meses' ? 180 : 30);
-  db.run("UPDATE licencias SET dias_licencia = dias_licencia + ? WHERE usuario_id = ?", [dias, usuarioId], (err) => {
-    res.json({ status: "COMPLETED" });
-  });
-});
-
-// Servir la web
+// Servir la web principal
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
