@@ -14,6 +14,7 @@ const db = new sqlite3.Database('./grepobot.db');
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS usuarios (id INTEGER PRIMARY KEY, username TEXT UNIQUE, password TEXT)`);
   db.run(`CREATE TABLE IF NOT EXISTS licencias (id INTEGER PRIMARY KEY, usuario_id INTEGER, dias_licencia INTEGER DEFAULT 7, fecha_expiracion DATETIME, fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+  db.run(`CREATE TABLE IF NOT EXISTS descargas (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha_descarga DATETIME DEFAULT CURRENT_TIMESTAMP, UNIQUE(usuario_id))`);
 });
 
 app.post('/api/registro', (req, res) => {
@@ -38,7 +39,16 @@ app.post('/api/login', (req, res) => {
     const expiracion = new Date(row.fecha_expiracion);
     const diasRestantes = Math.ceil((expiracion - ahora) / (1000 * 60 * 60 * 24));
     
-    res.json({ success: true, usuarioId: row.id, username, dias: Math.max(0, diasRestantes) });
+    // Verificar si ya descargó
+    db.get("SELECT fecha_descarga FROM descargas WHERE usuario_id = ?", [row.id], (err, descarga) => {
+      res.json({ 
+        success: true, 
+        usuarioId: row.id, 
+        username, 
+        dias: Math.max(0, diasRestantes),
+        yaDescargo: !!descarga
+      });
+    });
   });
 });
 
@@ -63,7 +73,7 @@ function generarCargador(usuarioId) {
   return `// ==UserScript==
 // @name         GrepoBot Pro Elite
 // @namespace    http://tampermonkey.net/
-// @version      5.3
+// @version      5.4
 // @description  Bot indetectable con licencia segura y verificación diaria
 // @author       GrepoTeam
 // @match        https://*.grepolis.com/game/*
@@ -81,7 +91,6 @@ function generarCargador(usuarioId) {
   'use strict';
   console.log("🔒 GrepoBot: Verificando licencia...");
   
-  // CREAR PANTALLA DE CARGA
   const pantallaCarga = document.createElement('div');
   pantallaCarga.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.98);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-family:Arial,sans-serif;';
   
@@ -158,8 +167,37 @@ function generarCargador(usuarioId) {
 }
 
 app.get('/api/descargar/:id/GrepoBot.user.js', (req, res) => {
-  res.setHeader('Content-disposition', 'attachment; filename=GrepoBot.user.js');
-  res.send(generarCargador(req.params.id));
+  const usuarioId = req.params.id;
+  
+  // VERIFICAR SI YA DESCARGÓ
+  db.get("SELECT fecha_descarga FROM descargas WHERE usuario_id = ?", [usuarioId], (err, descarga) => {
+    if (descarga) {
+      // YA DESCARGÓ - ENVIAR ERROR
+      return res.status(403).json({ error: "Ya descargaste el bot. No puedes descargar de nuevo hasta renovar." });
+    }
+    
+    // VERIFICAR SI TIENE LICENCIA VÁLIDA
+    db.get("SELECT fecha_expiracion FROM licencias WHERE usuario_id = ?", [usuarioId], (err, licencia) => {
+      if (!licencia) {
+        return res.status(403).json({ error: "No tienes licencia válida" });
+      }
+      
+      const ahora = new Date();
+      const expiracion = new Date(licencia.fecha_expiracion);
+      
+      if (ahora > expiracion) {
+        return res.status(403).json({ error: "Tu licencia ha caducado. Renuévala para descargar." });
+      }
+      
+      // ✅ TODO OK - REGISTRAR DESCARGA Y ENVIAR BOT
+      db.run("INSERT INTO descargas (usuario_id) VALUES (?)", [usuarioId], (err) => {
+        if (err) console.error("Error registrando descarga:", err);
+      });
+      
+      res.setHeader('Content-disposition', 'attachment; filename=GrepoBot.user.js');
+      res.send(generarCargador(usuarioId));
+    });
+  });
 });
 
 app.post('/api/obtener-codigo-real', (req, res) => {
@@ -181,7 +219,6 @@ app.post('/api/obtener-codigo-real', (req, res) => {
       
       const diasRestantes = Math.ceil((expiracion - ahora) / (1000 * 60 * 60 * 24));
       
-      // BANNER ABAJO A LA IZQUIERDA (NO MOLESTA)
       const botConBanner = `
 // 🔒 LICENCIA ACTIVA - DIAS RESTANTES: ${diasRestantes}
 ${data}
