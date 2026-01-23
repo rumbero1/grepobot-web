@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body { padding: 20px; }
+        .dashboard { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Dashboard</h2>
+        <div class="row dashboard">
+            <div class="col-md-6">
+                <h4>User Statistics</h4>
+                <div id="user-stats">
+                    <!-- User statistics data here -->
+                    <p>Total Users: <span id="total-users">0</span></p>
+                    <p>Active Users: <span id="active-users">0</span></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h4>Login Logs</h4>
+                <div id="login-logs">
+                    <!-- Login logs data here -->
+                    <ul id="logs-list">
+                        <li>No logs available</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="row dashboard">
+            <div class="col-md-6">
+                <h4>Download Tracking</h4>
+                <div id="download-tracking">
+                    <!-- Download tracking data here -->
+                    <p>Total Downloads: <span id="total-downloads">0</span></p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h4>Real-Time Data</h4>
+                <div id="real-time-data">
+                    <!-- Real-time data display -->
+                    <p>Latest Activity: <span id="latest-activity">None</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Simulated data for demonstration purposes
+        document.getElementById('total-users').textContent = 250;
+        document.getElementById('active-users').textContent = 45;
+        document.getElementById('total-downloads').textContent = 1200;
+        document.getElementById('latest-activity').textContent = new Date().toLocaleString();
+        
+        // Simulated login logs
+        const logs = [
+            'User1 logged in at 2026-01-23 19:00:00',
+            'User2 logged in at 2026-01-23 19:02:00'
+        ];
+        const logsList = document.getElementById('logs-list');
+        logsList.innerHTML = '';
+        logs.forEach(log => {
+            const li = document.createElement('li');
+            li.textContent = log;
+            logsList.appendChild(li);
+        });
+    </script>
+</body>
+</html>
