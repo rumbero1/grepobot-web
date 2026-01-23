@@ -1,45 +1,68 @@
-// bot_original.js
-// Improved bot features
+// ==UserScript==
+// @name         GrepoBot
+// @namespace    http://tampermonkey.net/
+// @version      1.0
+// @description  Bot for Grepolis with multiple features
+// @author       rumbero1
+// @match        *://*.grepolis.com/*
+// @grant        none
+// ==/UserScript==
 
-// Anti-detection mechanism
-function antiDetection() {
-    // Implement anti-detection logic
-}
+(() => {
+    'use strict';
 
-// Firefox support
-function initFirefoxSupport() {
-    console.log('Firefox support initialized');
-    // Logic for compatibility with Firefox
-}
+    // Planner Mode
+    const plannerMode = () => {
+        // [Implementation]
+    };
 
-// Custom notifications
-function showNotification(message) {
-    // Create and display custom notifications
-    alert(message);
-}
+    // Dodge Mode
+    const dodgeMode = () => {
+        // [Implementation]
+    };
 
-// Real-time server time
-function displayServerTime() {
-    setInterval(() => {
-        const now = new Date();
-        console.log('Server time: ' + now.toUTCString());
-    }, 1000);
-}
+    // Cave Mode
+    const caveMode = () => {
+        // [Implementation]
+    };
 
-// Attack history
-let attackHistory = [];
-function logAttack(attackDetails) {
-    attackHistory.push(attackDetails);
-    console.log('Attack logged:', attackDetails);
-}
+    // Farm Mode
+    const farmMode = () => {
+        // [Implementation]
+    };
 
-// Initialization function
-function initBot() {
-    antiDetection();
-    initFirefoxSupport();
-    displayServerTime();
-    // Other initialization logic
-}
+    // Build Mode
+    const buildMode = () => {
+        // [Implementation]
+    };
 
-// Start the bot
-initBot();
+    // Recruit Mode
+    const recruitMode = () => {
+        // [Implementation]
+    };
+
+    // Culture Mode
+    const cultureMode = () => {
+        // [Implementation]
+    };
+
+    // Academy Mode
+    const academyMode = () => {
+        // [Implementation]
+    };
+
+    // Initialization
+    const init = () => {
+        plannerMode();
+        dodgeMode();
+        caveMode();
+        farmMode();
+        buildMode();
+        recruitMode();
+        cultureMode();
+        academyMode();
+    };
+
+    // Run
+    init();
+})();
