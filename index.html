@@ -3,74 +3,81 @@
 <head>
   <meta charset="UTF-8">
   <title>GrepoBot Pro - Portal</title>
-  <!-- SDK oficial PayPal sandbox -->
   <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
   <style>
-    body { background:#191919; color:#fff; font-family:'Segoe UI', Arial, sans-serif; margin:0;}
-    .mainbox { max-width:420px; margin:42px auto; background:#232323; border-radius:14px; padding:32px;}
-    h1 { color:#ffd700; text-align:center;}
-    .input-group { margin-bottom:16px; }
-    .input-group label { display:block; margin-bottom:7px;}
-    .input-group input { width:100%; background:#222; border:1px solid #444; color:#fff; border-radius:5px; padding:8px;}
-    .cta-btn { background:#4caf50; color:#fff; border:none; border-radius:7px; font-size:18px; font-weight:bold; padding:13px 0; width:100%; margin-bottom:8px; cursor:pointer;}
-    .success { color:#10ff37; margin:6px 0;}
-    .error { color:#ff3f3f; margin:6px 0;}
-    .secc { margin:26px 0 14px 0; border-top:1px solid #333; padding-top:19px;}
-    .planes { display:flex; gap:11px; justify-content:center; margin-bottom:20px;}
-    .plan { background:#ffd700; color:#232323; font-weight:bold; border:2px solid #fff3; min-width:101px; text-align:center; border-radius:7px; padding:13px 7px; cursor:pointer; font-size:17px;}
+    body {background: #181d23; color:#eee; font-family:sans-serif; margin:0;}
+    .mainbox {max-width:470px; margin:50px auto; background:#23262e; border-radius:17px; padding:35px; box-shadow:0 9px 37px #0008;}
+    h1 {color:#ffd700; font-size:2.2em; display:flex; align-items:center; gap:10px; justify-content:center;margin-bottom:6px;}
+    .estatus {background:#37c536; color:white; font-weight:bold; padding:7px 14px; border-radius:9px; text-align:center; margin-bottom:14px;margin-top:8px;}
+    .img-bot { width:106px; border-radius:14px; box-shadow:0 3px 10px #0005; display:block; margin:12px auto 22px auto;}
+    .info-block {background:#22262c; border-radius:11px;padding:12px 20px;margin-bottom:18px; font-size:15px;}
+    .planes { display:flex; gap:11px; justify-content:center; margin-bottom:16px;}
+    .plan { background:#ffd700; color:#232323; font-weight:bold; border:2px solid #fff3; min-width:101px; text-align:center; border-radius:7px; padding:13px 7px; cursor:pointer;}
     .plan.selected { border:2px solid #07c; background:#232323; color:#ffd700;}
-    #paypal-area { margin-top:30px;}
+    #paypal-area { margin:19px 0 0 0;}
+    .cta-btn {background:#47d650;color:#fff;font-weight:bold;border-radius:7px;padding:15px 0;width:100%;margin-top:10px;cursor:pointer;border:none;font-size:18px;}
+    .instr {color:#aee1ff;font-size:15px;margin-bottom:11px;}
+    .bot-demo {background:#223053;border-radius:8px;padding:16px;margin-bottom:16px;}
+    .bot-demo label {font-size:14px;color:#ffd700;}
+    .bot-demo input {width:77%;border-radius:6px;padding:7px;border:1px solid #434b68;background:#253052;color:#fff;}
+    #outputia { color:#cdf274;margin:6px 0 0 0;min-height:32px;}
+    .secc {margin:22px 0 9px 0;}
   </style>
 </head>
 <body>
   <div class="mainbox" id="portal">
     <h1>💎 GrepoBot Pro</h1>
-    <div id="loginbox">
-      <div class="input-group">
-        <label>Usuario</label>
-        <input type="text" id="user" placeholder="Tu usuario">
-      </div>
-      <div class="input-group">
-        <label>Contraseña</label>
-        <input type="password" id="pass" placeholder="Tu contraseña">
-      </div>
-      <button class="cta-btn" onclick="acceder()">Entrar / Registrarse</button>
-      <div id="msg-login"></div>
+    <img src="https://i.imgur.com/LKQjV4d.png" alt="Bot Imagen" class="img-bot">
+    <div class="estatus" id="estado">Licencia activa: 7 días (demo)</div>
+    <div class="info-block">
+      <strong>¿Qué es GrepoBot Pro?</strong>
+      <br>
+      Automatiza tareas en Grepolis, farmea aldeas, gestiona tus ciudades y mejora tus puntos sin esfuerzo.<br><br>
+      <span style="color:#ffd700;">¡Ahorra horas cada semana!</span>
     </div>
-    <div id="dashboard" style="display:none;">
-      <div class="success" id="lic-status">Licencia activa: 7 días</div>
-      <div class="secc">
-        <h3>Instalación</h3>
-        <button class="cta-btn" onclick="descargarBot()">⬇ INSTALAR BOT</button>
-        <div id="msg-download" style="font-size:14px; color:#b9ffce;"></div>
+    <div class="info-block instr">
+      <strong>Instrucciones de instalación:</strong><br>
+      1. Instala la extensión Tampermonkey<br>
+      2. Haz clic en “Instalar Bot” para agregar GrepoBot<br>
+      3. Ingresa tu licencia en el panel.<br>
+      <button class="cta-btn" onclick="descargarBot()">⬇ INSTALAR BOT (demo)</button>
+      <div id="msg-download" style="font-size:14px;color:#b9ffce;"></div>
+    </div>
+    <div class="bot-demo">
+      <label>Pregunta sobre GrepoBot Pro:</label><br>
+      <input id="qia" type="text" placeholder="Ej: ¿Para qué sirve el bot?">
+      <button onclick="demoIA()" style="margin-left:6px;">Preguntar</button>
+      <div id="outputia"></div>
+    </div>
+    <div class="secc">
+      <h3>Renovar Licencia</h3>
+      <div class="planes">
+        <div class="plan selected" onclick="eligePlan(1,7.99,this)">1 Mes<br>$7.99</div>
+        <div class="plan" onclick="eligePlan(6,45.00,this)">6 Meses<br>$45.00</div>
+        <div class="plan" onclick="eligePlan(12,80.00,this)">1 Año<br>$80.00</div>
       </div>
-      <div class="secc">
-        <h3>Renovar Licencia</h3>
-        <div class="planes">
-          <div class="plan selected" onclick="eligePlan(1,7.99,this)">1 Mes<br>$7.99</div>
-          <div class="plan" onclick="eligePlan(6,45.00,this)">6 Meses<br>$45.00</div>
-          <div class="plan" onclick="eligePlan(12,80.00,this)">1 Año<br>$80.00</div>
-        </div>
-        <div id="paypal-area"></div>
-      </div>
+      <div id="paypal-area"></div>
     </div>
   </div>
-  <script>
-    // Login/registro local fake
-    function acceder(){
-      let u = document.getElementById('user').value.trim();
-      let p = document.getElementById('pass').value.trim();
-      if (!u || !p) { document.getElementById('msg-login').innerHTML = '<span class="error">Introduce usuario y contraseña</span>'; return; }
-      document.getElementById('loginbox').style.display='none';
-      document.getElementById('dashboard').style.display='block';
-      document.getElementById('lic-status').innerHTML = 'Licencia activa: 7 días';
-    }
-    // Descargar Bot (simulado)
+<script>
+    // Botón descarga simulado
     function descargarBot() {
-      document.getElementById('msg-download').textContent = "Descarga simulada (aquí iría el GrepoBot.user.js)";
-      // Aquí podrías poner: window.open('/GrepoBot.user.js');
+      document.getElementById('msg-download').textContent = "En demo: aquí se descargaría GrepoBot.user.js";
+      // window.open('https://tudominio.com/GrepoBot.user.js');
     }
-    // Plan y PayPal
+    // Mini IA demo fake
+    function demoIA() {
+      let pregunta = (document.getElementById('qia').value || '').toLowerCase()
+      let box = document.getElementById('outputia');
+      if(!pregunta.trim()){ box.innerHTML = "<span style='color:#f99;'>Escribe tu pregunta.</span>"; return;}
+      if(pregunta.includes("instal")) box.innerHTML = "Solo necesitas Tampermonkey y hacer clic en 'Instalar Bot'. Luego activa tu licencia.";
+      else if(pregunta.includes("ciudad")) box.innerHTML = "El bot gestiona tus ciudades y optimiza la producción automáticamente.";
+      else if(pregunta.includes("farmea")) box.innerHTML = "Realiza auto-farmee cada minuto sin esfuerzo.";
+      else if(pregunta.includes("licencia")) box.innerHTML = "Puedes renovar tu licencia aquí mismo; es inmediata tras el pago.";
+      else if(pregunta.includes("cómo funciona") || pregunta.includes("funciona")) box.innerHTML = "GrepoBot Pro simula acciones humanas en Grepolis y automatiza tareas tediosas.";
+      else box.innerHTML = "Escribe una pregunta sobre el bot y te respondemos aquí.";
+    }
+    // Licencia y PayPal
     let plan = { meses: 1, precio: 7.99 };
     function eligePlan(meses, precio, elem){
       plan = {meses, precio};
@@ -91,7 +98,7 @@
           });
         },
         onApprove: function(data, actions){
-          document.getElementById('lic-status').textContent = '✅ ¡Pago simulado/sandbox realizado correctamente!';
+          document.getElementById('estado').textContent = '✅ ¡Pago simulado/sandbox realizado correctamente!';
           return actions.order.capture().then(function(details){
             alert('Pago completado en sandbox. Gracias, ' + (details.payer.name ? details.payer.name.given_name : 'usuario') + '!');
           });
@@ -99,6 +106,6 @@
       }).render('#paypal-area');
     }
     window.onload = muestraPayPal;
-  </script>
+</script>
 </body>
 </html>
