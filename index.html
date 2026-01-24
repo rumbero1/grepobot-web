@@ -6,9 +6,11 @@
   <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
   <style>
     body { background: #191919; color:#ececec; font-family: 'Segoe UI', Arial, sans-serif; margin:0;}
-    .centerbox { background:#232323; max-width:460px; margin:48px auto; border-radius:16px; padding:29px 24px 29px 24px; }
+    .centerbox { background:#232323; max-width:490px; margin:44px auto; border-radius:16px; padding:29px 24px 29px 24px;}
     h1 { color: #ffd700; text-align:center; margin-bottom: 0; }
-    .imgbotmain {display:block; width:85%; max-width:250px; margin:18px auto 19px auto; border-radius:11px;box-shadow:0 7px 34px #000a;}
+    .imgbotmain {display:block; width:85%; max-width:270px; margin:18px auto 19px auto; border-radius:11px; box-shadow:0 7px 34px #000a;}
+    .imgs {display:flex;justify-content:center;gap:16px;margin-bottom:10px;}
+    .imgs img {width:110px;max-width:45vw;border-radius:9px;box-shadow:0 4px 16px #0006;}
     .alert { color:#fff; background:#19ba2b; border-radius:9px; padding:9px 12px;margin-bottom:13px;text-align:center;}
     .lic-active {background:rgba(70,255,93,.10);color:#44db67;font-weight:bold;border-radius:7px;padding:7px 0 7px 13px;margin:14px 0 17px 0;}
     .infobox {background:#22262c;border-radius:10px;padding:13px 19px 9px 19px;margin-bottom:18px;}
@@ -16,7 +18,7 @@
     .inst-block {background:#192a23;border-radius:10px;padding:13px 14px 13px 18px;margin-bottom:15px;}
     .inst-title {color:#ffd700;font-weight:bold;margin-bottom:7px;}
     .cta-btn {background:#36c651;font-weight:bold;color:#fff;border-radius:7px;padding:15px 0;width:100%;margin:7px 0 7px 0;cursor:pointer;border:none;font-size:17px;}
-    .planes {display:flex;gap:11px;justify-content:center;margin-bottom:10px;}
+    .planes {display:flex;gap:13px;justify-content:center;margin-bottom:10px;}
     .plan-btn {background:#ffd700;color:#232323;font-weight:bold;border:2px solid #fff3;min-width:101px;text-align:center;border-radius:7px;padding:13px 7px;cursor:pointer;font-size:16px;}
     .plan-btn.selected {border:2px solid #07c;background:#232323;color:#ffd700;}
     #paypal-area{margin-top:17px;}
@@ -24,41 +26,46 @@
     .bot-demo label {font-size:15px;color:#ffd700;}
     .bot-demo input {width:67%;border-radius:6px;padding:7px;border:1px solid #434b68;background:#253052;color:#fff;}
     #outputia {color:#cdf274;margin:5px 0 0 0;min-height:28px;}
-    .imgs {display:flex;justify-content:center;gap:16px;margin-bottom:7px;}
-    .imgs img {width:95px;max-width:45vw;border-radius:9px;box-shadow:0 4px 16px #0006;}
-    .smalltxt {font-size:14px;color:#b3f1e7;}
     .hr {margin:19px 0 15px 0; border:0; height:1px; background:#203040;}
-    @media(max-width:480px){.centerbox{padding:3vw 1vw;}.imgs img{width:50vw;max-width:150px;}}
+    .smalltxt {font-size:14px;color:#b3f1e7;}
+    .version-imgs {text-align:center;margin:16px 0 10px 0;}
+    .version-imgs span {color:#ffd700;font-size:15px;font-weight:bold;}
+    .version-imgs .vlabel {display:block;margin-bottom:2px;}
+    a {color:#36c651;}
+    @media(max-width:560px){.centerbox{padding:2vw 1vw;}.imgs img{width:48vw;max-width:140px;}}
   </style>
 </head>
 <body>
   <div class="centerbox">
     <h1>GrepoBot Pro</h1>
     <img src="bot-premium.jpg" alt="GrepoBot Bot Premium" class="imgbotmain">
-    <div class="imgs">
-      <img src="bot-basico.jpg" alt="Bot Básico">
-      <img src="bot-premium.jpg" alt="Bot Premium">
+    <div class="version-imgs">
+      <span class="vlabel">Versión Básica</span>
+      <img src="bot-basico.jpg" alt="Bot Básico" style="width:110px;vertical-align:middle;margin-right:14px;">
+      <span class="vlabel">Versión Premium</span>
+      <img src="bot-premium.jpg" alt="Bot Premium" style="width:110px;vertical-align:middle;">
     </div>
-    <div class="alert">Bienvenido a tu panel.</div>
-    <div class="lic-active" id="lic-status">Licencia activa: 7 días (demo)</div>
+    <div class="alert">Bienvenido. Tu panel de GrepoBot está listo.</div>
+    <div class="lic-active" id="lic-status">Licencia activa: <b>7 días (demo)</b></div>
     <div class="infobox">
       <strong>¿Qué hace GrepoBot?</strong><br>
-      Automatiza Grepolis: farmea aldeas, gestiona ciudades, programa ataques, y mucho más.<br>
-      <span class="smalltxt">La versión básica es gratis / la premium desbloquea todo el poder del bot.</span>
+      Automatiza Grepolis: farmea aldeas, gestiona ciudades, planifica ataques y modos automáticos.<br>
+      <span class="smalltxt">La versión básica solo farmea. La premium desbloquea planner, cultura, ataque auto, multiciudad y más. 
+      <br>Puedes comparar las dos versiones en las imágenes arriba.</span>
     </div>
     <div class="inst-block">
       <div class="inst-title">Instrucciones rápidas</div>
       <ol class="smalltxt">
-        <li>Instala <a href="https://tampermonkey.net/" target="_blank">Tampermonkey</a>.</li>
-        <li>Pulsa “INSTALAR BOT” y acepta.</li>
-        <li>Recarga Grepolis y ¡configura el bot!</li>
+        <li>Instala <a href="https://tampermonkey.net/" target="_blank">Tampermonkey</a> en Chrome o Edge.</li>
+        <li>Pulsa “INSTALAR BOT” y acepta la instalación.</li>
+        <li>Recarga Grepolis y configura el bot con tu licencia premium si la tienes.</li>
       </ol>
       <button class="cta-btn" onclick="descargarBot()">⬇ INSTALAR BOT</button>
       <div id="msg-download" style="font-size:14px;color:#b9ffce;"></div>
     </div>
     <div class="bot-demo">
-      <label>Pregunta al soporte IA:</label><br>
-      <input id="qia" type="text" placeholder="¿Cómo activo la premium?">
+      <label>Soporte IA:</label><br>
+      <input id="qia" type="text" placeholder="Ejemplo: ¿Diferencia premium?">
       <button onclick="demoIA()" style="margin-left:6px;">Preguntar</button>
       <div id="outputia"></div>
     </div>
@@ -70,8 +77,9 @@
       <button class="plan-btn" onclick="eligePlan(12,80.00,this)">1 Año<br>$80.00</button>
     </div>
     <div id="paypal-area"></div>
-    <div class="smalltxt" style="margin-top:17px;text-align:center;">
-      Soporte: <a href="mailto:soporte@grepobotpro.com">soporte@grepobotpro.com</a> &mdash; Telegram: <a href="https://t.me/grepobotpro" target="_blank">@grepobotpro</a>
+    <div class="smalltxt" style="margin-top:19px;text-align:center;">
+      Soporte: <a href="mailto:soporte@grepobotpro.com">soporte@grepobotpro.com</a>
+      &mdash; Telegram: <a href="https://t.me/grepobotpro" target="_blank">@grepobotpro</a>
     </div>
   </div>
 <script>
@@ -86,24 +94,26 @@
     let box = document.getElementById('outputia');
     if(!q.trim()){ box.innerHTML = "<span style='color:#f99;'>Escribe tu pregunta.</span>"; return;}
     if(q.includes("premium"))
-      res = "Para activar premium, compra la licencia aquí y pégala en el panel del juego tras recargar.";
-    else if(q.includes("instal")) 
-      res = "Instala Tampermonkey, luego 'INSTALAR BOT'. Aparece solo al abrir Grepolis.";
-    else if(q.includes("basico")||q.includes("diferencia"))
-      res = "El básico sólo farmea; el premium limpia ciudades, cultura, ataques y panel avanzado.";
+      res = "Premium desbloquea planner, modos automáticos, limpieza, cultura, multiciudad y soporte directo.";
+    else if(q.includes("instal"))
+      res = "Instala Tampermonkey, pulsa 'INSTALAR BOT' y acepta. El bot aparece al recargar Grepolis.";
+    else if(q.includes("básico")||q.includes("diferencia"))
+      res = "La versión básica solo farmea. Premium permite ataques, cultura, planner, multiciudad y mucho más.";
     else if(q.includes("farmea")||q.includes("aldea"))
-      res = "El bot hace farmeo cíclico automático por todas tus ciudades. ¡Solo activa y olvida!";
+      res = "El bot recolecta aldeas automáticamente cada pocos minutos. Solo tienes que activar el módulo.";
     else if(q.includes("problema")||q.includes("no funciona"))
-      res = "Confirma Tampermonkey activo, página de Grepolis abierta y licencia vigente. Si falla, contacta por Telegram.";
+      res = "Confirma que Tampermonkey está activado y la licencia es válida. Si tienes dudas, contacta soporte.";
     else if(q.includes("ban")||q.includes("seguridad"))
-      res = "GrepoBot simula tiempos reales y clicks humanos. Ningún usuario ha sido baneado por usarlo correctamente.";
+      res = "GrepoBot simula tiempos humanos y clicks aleatorios. No hay reportes de baneos con uso lógico.";
     else if(q.includes("licencia")||q.includes("pago"))
-      res = "La licencia premium se compra aquí. Pago seguro por Paypal/tarjeta; se activa en segundos.";
+      res = "Compra aquí tu licencia premium. El pago es por Paypal o tarjeta y se activa al instante.";
+    else if(q.includes("planner") || q.includes("11.80") || q.includes("ataques"))
+      res = "El planner premium planifica ataques, controles de segundos, modos DEF/ATK y automatización avanzada.";
     else
-      res = "Pregunta cualquier cosa sobre instalar, premium, farmeo, licencias o problemas y te ayudo aquí.";
+      res = "Pregunta lo que quieras sobre instalar, premium, planner, módulos o licencias.";
     box.innerHTML = res;
   }
-  // Pago Paypal igual que antes
+  // Pago Paypal DEMO
   let plan = { meses: 1, precio: 7.99 };
   function eligePlan(meses, precio, btn){
     plan = {meses, precio};
