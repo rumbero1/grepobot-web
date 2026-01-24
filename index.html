@@ -1,118 +1,86 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=480, initial-scale=1.0">
-    <title>GrepoBot Pro - Portal</title>
-    <script src="https://www.paypal.com/sdk/js?client-id=ARI8xtvx-zlykSa7RFIka_g5C3_iF8-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGs&currency=USD"></script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #191919; color: #e0e0e0; margin: 0;}
-        .mainbox { max-width: 440px; margin: 48px auto 0 auto; background: #232323; padding: 32px 30px 18px 30px; border-radius: 15px; box-shadow: 0 4px 18px #0004; }
-        h1 { color: #ffd16f; text-align: center; font-size: 2em; margin-bottom: 28px; letter-spacing: 1px; margin-top:0;}
-        .formbox { margin-bottom: 32px; }
-        .input-group { margin-bottom: 19px;}
-        .input-group label { display: block; margin-bottom: 5px; color: #bbb;}
-        .input-group input { width: 100%; padding: 11px; background: #232B1B; border: 1px solid #444; color: #fff; border-radius: 4px;}
-        .cta-btn { background: #24b651; border: none; color: #fff; width: 100%; border-radius: 6px; padding: 13px 0; font-size: 17.5px; font-weight: bold; cursor: pointer; margin-bottom: 9px; }
-        .cta-btn:hover { background: #39e07a;}
-        .alert { background: #ffe177; color: #184b06; font-size: 1.08em; padding: 10px 13px; border-radius: 7px; text-align: center; margin-bottom: 17px;}
-        .oculto { display: none;}
-        .bienv { color: #26df3e; font-weight: bold; font-size: 1.16em; margin-bottom: 9px;}
-        .licencia { background: #ffe177; color: #2d3a02; border-radius: 6px; padding: 10px 17px; font-size: 1.09em; font-weight: bold; margin-bottom: 22px; display:flex; align-items:center; gap:7px;}
-        .check { color: #3da300; font-size: 1.15em;}
-        .section-title { color: #ffd16f; font-weight: bold; margin: 22px 0 10px 0; font-size: 1.12em;}
-        .inst { color: #eeeeee; margin-bottom: 6px; font-size:14.5px;}
-        .desc-aviso { color: #a0ff81; font-size: 0.99em; margin-bottom: 11px; display:flex; align-items:center; gap:6px;}
-        .plans-box { background: #23231e; border-radius: 10px; padding: 22px 14px 15px 14px; margin-top: 18px; }
-        .plans-header { color: #b7e9de; font-size:1.08em; font-weight:bold; margin-bottom: 10px;}
-        .plans { display: flex; gap:12px; justify-content: center; margin-bottom: 10px;}
-        .plan-btn { background: #18170b; color: #ffd16f; border: 2.3px solid #ffd16f; border-radius: 9px; padding: 13px 10px; font-size: 1.13em; font-weight:600; min-width:116px; cursor: pointer; transition:0.21s all; }
-        .plan-btn.selected { background: #fff5c3; color: #604304; border: 2.3px solid #ffd700; font-weight: bold;}
-        .plan-ahorra { font-size: .92em; color: #43c76d; margin-top: 2px;}
-        #paypal-button-container { margin-top: 19px;}
-        .pie { color: #a8bcbe; text-align: center; font-size: 13px; margin-top: 33px;}
-        @media(max-width:500px){ .mainbox{margin:4vw 0 0 0;padding:7vw 2vw 4vw 2vw;} }
-    </style>
-</head>
-<body>
-  <div class="mainbox">
-    <h1>Acceso al Portal</h1>
-    <div id="loginbox">
-      <form class="formbox" onsubmit="event.preventDefault();loginFake();">
-        <div class="input-group">
-          <label for="user">Usuario</label>
-          <input type="text" id="user" autocomplete="username">
-        </div>
-        <div class="input-group">
-          <label for="pass">Contraseña</label>
-          <input type="password" id="pass" autocomplete="current-password">
-        </div>
-        <button class="cta-btn" type="submit">ENTRAR / REGISTRARSE</button>
-        <div class="alert oculto" id="alerta"></div>
-      </form>
-    </div>
-    <div id="dashboard" class="oculto">
-      <div class="bienv">Hola, <span id="nombreuser"></span></div>
-      <div class="licencia"><span class="check">✔️</span> Licencia activa: 7 días</div>
-      <div class="section-title">Instalación</div>
-      <div class="inst">Instala el script en Tampermonkey haciendo click en el botón:</div>
-      <button class="cta-btn" onclick="descargarBot()">🟢 INSTALAR BOT</button>
-      <div class="desc-aviso"><span>☑️</span>Descarga disponible (demo local)</div>
-      <div class="plans-box">
-        <div class="section-title" style="margin:0 0 9px 0; color:#47edea; display:flex; align-items:center; gap:7px;">
-          <span style="font-size:1.10em;">💎</span> Renovar Licencia
-        </div>
-        <div class="plans-header">Elige tu plan:</div>
-        <div class="plans">
-          <button class="plan-btn selected" onclick="eligePlan(1,7.99,this)">1 Mes<br>$7.99</button>
-          <button class="plan-btn" onclick="eligePlan(6,45,this)">6 Meses<br>$45.00<br><span class="plan-ahorra">Ahorra 10%</span></button>
-          <button class="plan-btn" onclick="eligePlan(12,80,this)">1 Año<br>$80.00<br><span class="plan-ahorra">Ahorra 20%</span></button>
-        </div>
-        <div id="paypal-button-container"></div>
-      </div>
-      <div class="pie">© 2026 GrepoBot Team. Software educativo.</div>
-    </div>
-  </div>
-<script>
-function loginFake() {
-    let u = document.getElementById('user').value.trim();
-    let p = document.getElementById('pass').value.trim();
-    let alerta = document.getElementById('alerta');
-    if (!u || !p) {
-        alerta.textContent = "Introduce usuario y contraseña";
-        alerta.className = "alert";
-        alerta.style.display = "";
-        return;
+// Reemplaza la función descargarArchivo existente por esta:
+function descargarArchivo() {
+  // Si hay sesión con backend, usa la ruta del API (tu backend.js)
+  if (typeof currentUserId !== 'undefined' && currentUserId) {
+    // intenta usar el backend
+    try {
+      window.location.href = API + '/descargar/' + currentUserId + '/GrepoBot.user.js';
+      return;
+    } catch (e) {
+      // caemos al fallback
     }
-    document.getElementById('loginbox').classList.add("oculto");
-    document.getElementById('dashboard').classList.remove("oculto");
-    document.getElementById('nombreuser').textContent = u;
+  }
+  // FALLBACK: abrir el archivo local GrepoBot.user.js (debe estar en la misma carpeta)
+  window.open('GrepoBot.user.js', '_blank');
 }
-function descargarBot() {
-    window.open('GrepoBot.user.js', '_blank');
+
+// Añade estas utilidades para comprobar backend (cache corto)
+let _backendCheck = { ok: null, ts: 0 };
+async function checkBackendAvailable() {
+  // cache 3s
+  if (_backendCheck.ts && (Date.now() - _backendCheck.ts) < 3000) return _backendCheck.ok;
+  _backendCheck.ts = Date.now();
+  try {
+    const res = await fetch(API + '/paypal/create-order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({planId:'1_MES'}) , mode: 'cors' });
+    // si responde JSON probablemente hay backend (puede devolver id o error)
+    _backendCheck.ok = res.ok;
+    return _backendCheck.ok;
+  } catch (err) {
+    _backendCheck.ok = false;
+    return false;
+  }
 }
-let plan = {meses:1, precio:7.99};
-function eligePlan(meses, precio, btn){
-    plan = {meses, precio};
-    document.querySelectorAll('.plan-btn').forEach(b=>b.classList.remove('selected'));
-    btn.classList.add('selected');
-    renderPaypal();
+
+// Reemplaza renderPayPalButtons por esta versión (fallback cliente)
+function renderPayPalButtons() {
+  document.getElementById('paypal-button-container').innerHTML = '';
+  paypal.Buttons({
+    style: { color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
+    createOrder: async function(data, actions) {
+      // Intenta backend primero
+      const backendUp = await checkBackendAvailable();
+      if (backendUp) {
+        // pide al backend crear orden (igual que antes)
+        return fetch(API + '/paypal/create-order', {
+          method: 'post',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ planId: selectedPlanId })
+        }).then(res => res.json()).then(orderData => orderData.id);
+      } else {
+        // FALLBACK: crea orden en cliente (sandbox demo)
+        return actions.order.create({
+          purchase_units: [{
+            description: selectedPlanId + " GrepoBot Pro",
+            amount: { value: (selectedPlanId === '1_MES' ? '7.99' : (selectedPlanId === '6_MESES' ? '45.00' : '80.00')) }
+          }]
+        });
+      }
+    },
+    onApprove: async function(data, actions) {
+      const backendUp = await checkBackendAvailable();
+      if (backendUp) {
+        // captura en backend (tu lógica original)
+        return fetch(API + '/paypal/capture-order', {
+          method: 'post',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId, planId: selectedPlanId })
+        }).then(res => res.json()).then(details => {
+          alert('✅ ¡PAGO COMPLETADO! Licencia renovada.');
+          location.reload();
+        }).catch(e=>{
+          alert('Pago completado pero error al notificar backend. Refresca la página.');
+        });
+      } else {
+        // FALLBACK: orden aprobada en cliente (demo)
+        alert('Pago completado en sandbox (demo). Gracias por renovar GrepoBot Pro.');
+        // Si quieres, aquí puedes actualizar UI sin backend:
+        document.getElementById('status-licencia').className = 'alert success';
+        document.getElementById('status-licencia').innerHTML = '✅ <b>Licencia Activa</b> (30 días demo)';
+      }
+    },
+    onError: function(err) {
+      console.error('PayPal error', err);
+      alert('Error con PayPal. Desactiva bloqueadores y prueba en otro navegador.');
+    }
+  }).render('#paypal-button-container');
 }
-function renderPaypal() {
-    document.getElementById('paypal-button-container').innerHTML = "";
-    paypal.Buttons({
-        style:{color:'gold',shape:'rect',label:'paypal',height:47},
-        createOrder: (data, actions) =>
-            actions.order.create({
-                purchase_units: [{
-                    description: plan.meses + " Mes(es) GrepoBot Pro",
-                    amount: { value: plan.precio.toFixed(2) }
-                }]
-            }),
-        onApprove:   (data, actions) => alert('Pago simulado (sandbox/demo). ¡Gracias por renovar GrepoBot Pro!')
-    }).render('#paypal-button-container');
-}
-window.onload = renderPaypal;
-</script>
-</body>
-</html>
