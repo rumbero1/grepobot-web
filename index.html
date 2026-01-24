@@ -1,20 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Test PayPal Mínimo</title>
-  <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
+    <meta charset="UTF-8">
+    <title>Renovar Licencia - GrepoBot Pro</title>
+    <!-- SDK oficial PayPal sandbox - TU Client-ID -->
+    <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
+    <style>
+        body { background: #191919; color:#fff; font-family: 'Segoe UI', Arial,sans-serif; margin:0; }
+        .contenedor { max-width:460px; margin:65px auto; background:#232323; border-radius:17px; box-shadow:0 7px 34px #000a; padding:36px; }
+        h1 { color:#ffd700; font-size:2.2em; display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:12px;}
+        h1 .icon {font-size:1.2em;}
+        .estatus {background:#37c536; color:white; font-weight:bold; padding:7px 14px; border-radius:9px; text-align:center; margin-bottom:18px;margin-top:8px;}
+        .planes { display:flex; gap:11px; justify-content:center; margin-bottom:22px;}
+        .plan { background:#ffd700; color:#232323; font-weight:bold; border:2px solid #fff3; min-width:101px; text-align:center; border-radius:7px; padding:13px 7px; cursor:pointer; }
+        .plan.selected { border:2px solid #07c; background:#232323; color:#ffd700; }
+        #paypal-area { margin:28px 0 0 0; background:none; }
+    </style>
 </head>
 <body>
-  <h2>Test Botón PayPal</h2>
-  <div id="paypal-button-container"></div>
-  <script>
-    paypal.Buttons({
-      createOrder: (data, actions) => actions.order.create({
-        purchase_units: [{ amount: { value: '1.00' } }]
-      }),
-      onApprove: () => alert('Pago ok!')
-    }).render('#paypal-button-container');
-  </script>
+    <div class="contenedor">
+        <h1><span class="icon">💎</span> Renovar Licencia</h1>
+        <div class="estatus" id="estado">
+            Selecciona tu plan y paga con PayPal o tarjeta
+        </div>
+        <div class="planes">
+            <div class="plan selected" onclick="eligePlan(1, 7.99, this)">1 Mes<br>$7.99</div>
+            <div class="plan" onclick="eligePlan(6, 45.00, this)">6 Meses<br>$45.00</div>
+            <div class="plan" onclick="eligePlan(12, 80.00, this)">1 Año<br>$80.00</div>
+        </div>
+        <div id="paypal-area"></div>
+    </div>
+<script>
+    let plan = { meses: 1, precio: 7.99 };
+    function eligePlan(meses, precio, elem){
+        plan = {meses, precio};
+        document.querySelectorAll('.plan').forEach(p=>p.classList.remove('selected'));
+        elem.classList.add('selected');
+        muestraPayPal();
+    }
+    function muestraPayPal(){
+        document.getElementById('paypal-area').innerHTML = "";
+        paypal.Buttons({
+            style: { color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
+            createOrder: function(data, actions){
+                return actions.order.create({
+                    purchase_units: [{
+                        description: plan.meses + " Mes(es) GrepoBot Pro",
+                        amount: { value: plan.precio.toFixed(2) }
+                    }]
+                });
+            },
+            onApprove: function(data, actions){
+                document.getElementById('estado').textContent = '✅ ¡Pago simulado/sandbox realizado correctamente!';
+                return actions.order.capture().then(function(details){
+                    alert('Pago completado en sandbox. Gracias, ' + (details.payer.name ? details.payer.name.given_name : 'usuario') + '!');
+                });
+            }
+        }).render('#paypal-area');
+    }
+    // Muestra el botón al cargar
+    window.onload = muestraPayPal;
+</script>
 </body>
 </html>
