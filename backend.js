@@ -83,7 +83,7 @@ app.get('/api/descargar/:usuarioId/:filename', (req, res) => {
     panel.id = 'grepobot-panel';
     panel.style.cssText = 'position:fixed;bottom:20px;left:20px;width:300px;background:#1a1a2f;border:2px solid #4caf50;border-radius:10px;padding:15px;color:#e0e0e0;font-family:Arial,sans-serif;z-index:99999;box-shadow:0 4px 15px rgba(76,175,80,0.4);';
     
-    panel.innerHTML = '<div style="text-align:center;"><h3 style="margin:0;color:#4caf50;">⚔️ GrepoBot V11.80</h3><p style="margin:5px 0;font-size:12px;color:#aaa;">✅ ACTIVO</p></div>';
+    panel.innerHTML = '<div style="text-align:center;"><h3 style="margin:0;color:#4caf50;">⚔️ GrepoBot V11.80</h3></div>';
     
     document.body.appendChild(panel);
 })();`;
@@ -115,4 +115,5 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
     console.log('\n✅ SERVIDOR LISTO en puerto 10000');
     console.log('🌐 URL: http://localhost:10000\n');
+
 });
