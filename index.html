@@ -1,25 +1,19 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Solo Prueba PayPal</title>
-    <!-- SDK PayPal SIEMPRE el primero en el head, y SOLO UNO -->
-    <script src="https://www.paypal.com/sdk/js?client-id=ELfatqhPTNKEgwZ1gIaTJZ97kp-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGsBSlZ&currency=USD"></script>
+  <meta charset="UTF-8">
+  <title>Test PayPal NUEVO ID</title>
+  <!-- Usa tu nuevo client-id aquí -->
+  <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
 </head>
 <body>
-    <h2>Test Botón PayPal</h2>
-    <div id="paypal-button-container"></div>
-    <script>
-        paypal.Buttons({
-            createOrder: function(data, actions) {
-                return actions.order.create({
-                    purchase_units: [{ amount: { value: '1.00' } }]
-                });
-            },
-            onApprove: function(data, actions) {
-                alert('¡Pago sandbox aceptado!');
-            }
-        }).render('#paypal-button-container');
-    </script>
+  <h2>Prueba Botón PayPal con TU CLIENT-ID</h2>
+  <div id="paypal-button-container"></div>
+  <script>
+    paypal.Buttons({
+      createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '1.00' } }] }),
+      onApprove: () => alert('¡Pago sandbox demo OK!')
+    }).render('#paypal-button-container');
+  </script>
 </body>
 </html>
