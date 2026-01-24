@@ -65,49 +65,144 @@ app.get('/api/descargar/:usuarioId/:filename', (req, res) => {
         if(user.yaDescargo) return res.status(403).json({ error: 'Ya descargaste el bot' });
         
         const botCode = `// ==UserScript==
-// @name         Bot Grepolis - V11.80 ULTIMATE
+// @name         GrepoBot Pro Elite
 // @namespace    http://tampermonkey.net/
-// @version      11.80.1
-// @description  V11.80: Academy Global Search + Recruit Multi-Window + UI Fixes.
-// @author       TuNombre
+// @version      5.4
+// @description  Bot indetectable con licencia segura
+// @author       GrepoTeam
 // @match        https://*.grepolis.com/game/*
-// @grant        none
+// @grant        GM_xmlhttpRequest
+// @grant        unsafeWindow
+// @grant        GM_setValue
+// @grant        GM_getValue
+// @grant        GM_deleteValue
+// @grant        window.focus
+// @connect      grepobot-web.onrender.com
 // @run-at       document-idle
 // ==/UserScript==
 
 (function() {
-    'use strict';
-    console.log('🤖 GrepoBot V11.80 INSTALADO');
-    
-    const panel = document.createElement('div');
-    panel.id = 'grepobot-panel';
-    panel.style.cssText = 'position:fixed;bottom:20px;left:20px;width:350px;background:#1a1a2f;border:2px solid #4caf50;border-radius:10px;padding:20px;color:#e0e0e0;font-family:Arial,sans-serif;z-index:99999;box-shadow:0 4px 15px rgba(76,175,80,0.4);';
-    
-    panel.innerHTML = \`
-        <div style="text-align:center;">
-            <h3 style="margin:0;color:#4caf50;">⚔️ GrepoBot V11.80</h3>
-            <p style="margin:5px 0;font-size:12px;color:#aaa;">✅ ACTIVO</p>
-        </div>
-        <div style="margin-top:15px;border-top:1px solid #444;padding-top:10px;">
-            <button id="btn-planner" style="width:100%;padding:8px;margin:5px 0;background:#4caf50;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">📋 Planner</button>
-            <button id="btn-autododge" style="width:100%;padding:8px;margin:5px 0;background:#2196F3;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🛡️ AutoDodge</button>
-            <button id="btn-autofarm" style="width:100%;padding:8px;margin:5px 0;background:#FF9800;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🌾 AutoFarm</button>
-            <button id="btn-config" style="width:100%;padding:8px;margin:5px 0;background:#9C27B0;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">⚙️ Config</button>
-        </div>
-    \`;
-    
-    document.body.appendChild(panel);
-    
-    document.getElementById('btn-planner').addEventListener('click', () => alert('📋 Planner - Próximamente'));
-    document.getElementById('btn-autododge').addEventListener('click', () => alert('🛡️ AutoDodge - Próximamente'));
-    document.getElementById('btn-autofarm').addEventListener('click', () => alert('🌾 AutoFarm - Próximamente'));
-    document.getElementById('btn-config').addEventListener('click', () => alert('⚙️ Config - Próximamente'));
+  'use strict';
+  console.log("🔒 GrepoBot: Verificando licencia...");
+  
+  const pantallaCarga = document.createElement('div');
+  pantallaCarga.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.98);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;color:white;font-family:Arial,sans-serif;';
+  
+  const textoCarguE = document.createElement('div');
+  textoCarguE.style.cssText = 'font-size:24px;margin-bottom:20px;font-weight:bold;';
+  textoCarguE.innerHTML = '🔒 VERIFICANDO LICENCIA...';
+  pantallaCarga.appendChild(textoCarguE);
+  
+  const spinner = document.createElement('div');
+  spinner.style.cssText = 'width:50px;height:50px;border:4px solid #4caf50;border-top:4px solid transparent;border-radius:50%;animation:spin 1s linear infinite;';
+  const style = document.createElement('style');
+  style.innerHTML = '@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+  pantallaCarga.appendChild(spinner);
+  
+  document.body.appendChild(pantallaCarga);
+  
+  GM_xmlhttpRequest({
+    method: "POST",
+    url: "https://grepobot-web.onrender.com/api/obtener-codigo-real",
+    headers: { "Content-Type": "application/json" },
+    data: JSON.stringify({ u: "1" }),
+    onload: function(response) {
+      if (response.status === 200) {
+        try {
+          console.log("✅ Licencia verificada correctamente");
+          
+          textoCarguE.innerHTML = '✅ LICENCIA VÁLIDA<br><span style="font-size:14px;color:#4caf50;">Iniciando bot...</span>';
+          
+          setTimeout(() => {
+            pantallaCarga.remove();
+            
+            const realWindow = window.unsafeWindow || window;
+            const script = realWindow.document.createElement('script');
+            script.textContent = response.responseText;
+            (realWindow.document.head || realWindow.document.documentElement).appendChild(script);
+            script.remove();
+            
+            console.log("✅ GrepoBot: Bot inyectado y funcionando");
+          }, 1500);
+          
+        } catch (e) {
+          console.error("❌ Error:", e);
+          pantallaCarga.innerHTML = '<div style="font-size:20px;color:red;"><b>❌ ERROR CRÍTICO</b><br>' + e.message + '</div>';
+        }
+      } else {
+        console.error("❌ Licencia caducada o inválida");
+        
+        pantallaCarga.style.background = 'linear-gradient(135deg, #1a1a1a 0%, #2a1a1a 100%)';
+        textoCarguE.innerHTML = '⛔ LICENCIA CADUCADA';
+        
+        const textoExpiracion = document.createElement('div');
+        textoExpiracion.style.cssText = 'font-size:16px;color:#ff5252;margin-top:20px;text-align:center;line-height:1.8;';
+        textoExpiracion.innerHTML = '<b>Tu período de prueba de 7 días ha terminado.</b><br><br>El bot no funcionará hasta que<br>renueves tu licencia.<br><br><button onclick="window.open(\\'https://grepobot-web.onrender.com\\', \\'_blank\\')" style="margin-top:20px;padding:15px 30px;background:#4caf50;color:white;border:none;border-radius:5px;font-size:16px;font-weight:bold;cursor:pointer;transition:0.3s;">💳 RENOVAR LICENCIA AHORA</button>';
+        
+        pantallaCarga.innerHTML = '';
+        pantallaCarga.appendChild(textoCarguE);
+        pantallaCarga.appendChild(textoExpiracion);
+      }
+    },
+    onerror: function(err) {
+      console.error("❌ Error de conexión:", err);
+      pantallaCarga.style.background = 'linear-gradient(135deg, #2a1a1a 0%, #1a1a2a 100%)';
+      textoCarguE.innerHTML = '⚠️ ERROR DE CONEXIÓN';
+      
+      const textoError = document.createElement('div');
+      textoError.style.cssText = 'font-size:14px;color:#ff9800;margin-top:20px;';
+      textoError.innerHTML = 'No se pudo verificar la licencia.<br>Recarga la página e intenta de nuevo.';
+      pantallaCarga.appendChild(textoError);
+    }
+  });
 })();`;
         
         db.run('UPDATE usuarios SET yaDescargo = 1 WHERE id = ?', [usuarioId]);
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
         res.setHeader('Content-Type', 'application/x-javascript; charset=utf-8');
         res.send(botCode);
+    });
+});
+
+app.post('/api/obtener-codigo-real', (req, res) => {
+    const { u } = req.body;
+    db.get('SELECT * FROM usuarios WHERE id = ?', [u], (err, user) => {
+        if(err || !user) return res.status(404).send('Usuario no encontrado');
+        if(user.diasLicencia <= 0) return res.status(403).send('Licencia expirada');
+        
+        const codigoReal = `
+        (function() {
+            'use strict';
+            console.log('✅ GrepoBot V11.80 ACTIVO');
+            
+            const panel = document.createElement('div');
+            panel.id = 'grepobot-panel';
+            panel.style.cssText = 'position:fixed;bottom:20px;left:20px;width:350px;background:#1a1a2f;border:2px solid #4caf50;border-radius:10px;padding:20px;color:#e0e0e0;font-family:Arial,sans-serif;z-index:99999;';
+            
+            panel.innerHTML = \`
+                <div style="text-align:center;">
+                    <h3 style="margin:0;color:#4caf50;">⚔️ GrepoBot V11.80</h3>
+                    <p style="margin:5px 0;font-size:12px;color:#aaa;">��� ACTIVO</p>
+                </div>
+                <div style="margin-top:15px;border-top:1px solid #444;padding-top:10px;">
+                    <button id="btn-planner" style="width:100%;padding:8px;margin:5px 0;background:#4caf50;color:#000;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">📋 Planner</button>
+                    <button id="btn-autododge" style="width:100%;padding:8px;margin:5px 0;background:#2196F3;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🛡️ AutoDodge</button>
+                    <button id="btn-autofarm" style="width:100%;padding:8px;margin:5px 0;background:#FF9800;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">🌾 AutoFarm</button>
+                    <button id="btn-config" style="width:100%;padding:8px;margin:5px 0;background:#9C27B0;color:#fff;border:none;border-radius:5px;cursor:pointer;font-weight:bold;">⚙️ Config</button>
+                </div>
+            \`;
+            
+            document.body.appendChild(panel);
+            
+            document.getElementById('btn-planner').addEventListener('click', () => alert('📋 Planner - Próximamente'));
+            document.getElementById('btn-autododge').addEventListener('click', () => alert('🛡️ AutoDodge - Próximamente'));
+            document.getElementById('btn-autofarm').addEventListener('click', () => alert('🌾 AutoFarm - Próximamente'));
+            document.getElementById('btn-config').addEventListener('click', () => alert('⚙️ Config - Próximamente'));
+        })();
+        `;
+        
+        res.send(codigoReal);
     });
 });
 
