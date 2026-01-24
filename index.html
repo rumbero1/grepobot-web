@@ -314,15 +314,15 @@
             msg.style.display = 'block';
         }
     }
-
+<script>
+    // ...
     function descargarArchivo() {
         if(!currentUserId) return alert("Sesión expirada");
-        
-        // Obtener el script y abrirlo en Tampermonkey
         const scriptUrl = API + '/descargar/' + currentUserId + '/GrepoBot.user.js';
-        window.location.href = scriptUrl;
+        window.open(scriptUrl, "_blank"); // ¡Obligatorio abrir en pestaña nueva!
     }
-
+    // ...
+</script>
     // --- PAYPAL LOGIC ---
     function renderPayPalButtons() {
         document.getElementById('paypal-button-container').innerHTML = '';
