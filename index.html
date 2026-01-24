@@ -1,86 +1,146 @@
-// Reemplaza la función descargarArchivo existente por esta:
-function descargarArchivo() {
-  // Si hay sesión con backend, usa la ruta del API (tu backend.js)
-  if (typeof currentUserId !== 'undefined' && currentUserId) {
-    // intenta usar el backend
+<script>
+/* --- Ajustes robustos para descarga y PayPal (pegue esto al final de body) --- */
+
+// Si tu index ya define API/currentUserId/selectedPlanId, se respetan.
+// Asegúrate de NO duplicar variables globales conflictivas.
+
+const _MY = (function(){
+  const API = (typeof window.API !== 'undefined') ? window.API : 'http://localhost:10000/api';
+  let currentUserId = (typeof window.currentUserId !== 'undefined') ? window.currentUserId : null;
+  let selectedPlanId = (typeof window.selectedPlanId !== 'undefined') ? window.selectedPlanId : '1_MES';
+
+  // Usar/actualizar globals si existen
+  window.currentUserId = currentUserId;
+  window.selectedPlanId = selectedPlanId;
+  window.API = API;
+
+  // fallback descarga del script local si backend no responde
+  function descargarArchivo() {
     try {
-      window.location.href = API + '/descargar/' + currentUserId + '/GrepoBot.user.js';
-      return;
+      if (window.currentUserId) {
+        // intenta descargar por API (backend)
+        window.location.href = API + '/descargar/' + window.currentUserId + '/GrepoBot.user.js';
+        return;
+      }
     } catch (e) {
-      // caemos al fallback
+      // seguimos al fallback
+      console.warn('Fallo al usar backend para descarga, fallback local', e);
     }
+    // FALLBACK: abrir el archivo local en la misma carpeta
+    window.open('GrepoBot.user.js', '_blank');
   }
-  // FALLBACK: abrir el archivo local GrepoBot.user.js (debe estar en la misma carpeta)
-  window.open('GrepoBot.user.js', '_blank');
-}
 
-// Añade estas utilidades para comprobar backend (cache corto)
-let _backendCheck = { ok: null, ts: 0 };
-async function checkBackendAvailable() {
-  // cache 3s
-  if (_backendCheck.ts && (Date.now() - _backendCheck.ts) < 3000) return _backendCheck.ok;
-  _backendCheck.ts = Date.now();
-  try {
-    const res = await fetch(API + '/paypal/create-order', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({planId:'1_MES'}) , mode: 'cors' });
-    // si responde JSON probablemente hay backend (puede devolver id o error)
-    _backendCheck.ok = res.ok;
-    return _backendCheck.ok;
-  } catch (err) {
-    _backendCheck.ok = false;
-    return false;
+  // Comprobar si backend responde (simple POST a create-order) — fallo no mata nada
+  async function checkBackendAvailable() {
+    // breve cache
+    if (checkBackendAvailable._cached !== undefined && (Date.now() - checkBackendAvailable._cached.ts) < 3000) {
+      return checkBackendAvailable._cached.ok;
+    }
+    checkBackendAvailable._cached = { ok: false, ts: Date.now() };
+    try {
+      const resp = await fetch(API + '/paypal/create-order', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ planId: '1_MES' })
+      });
+      checkBackendAvailable._cached.ok = resp.ok;
+    } catch (err) {
+      checkBackendAvailable._cached.ok = false;
+    }
+    return checkBackendAvailable._cached.ok;
   }
-}
 
-// Reemplaza renderPayPalButtons por esta versión (fallback cliente)
-function renderPayPalButtons() {
-  document.getElementById('paypal-button-container').innerHTML = '';
-  paypal.Buttons({
-    style: { color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
-    createOrder: async function(data, actions) {
-      // Intenta backend primero
-      const backendUp = await checkBackendAvailable();
-      if (backendUp) {
-        // pide al backend crear orden (igual que antes)
-        return fetch(API + '/paypal/create-order', {
-          method: 'post',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ planId: selectedPlanId })
-        }).then(res => res.json()).then(orderData => orderData.id);
-      } else {
-        // FALLBACK: crea orden en cliente (sandbox demo)
+  // Render PayPal con fallback cliente si backend no disponible
+  async function renderPayPalButtons() {
+    const container = document.getElementById('paypal-button-container');
+    if(!container) return;
+    container.innerHTML = '';
+
+    // Esperar a que el SDK de PayPal esté cargado (max 5s)
+    let tries = 0;
+    while (typeof paypal === 'undefined' && tries < 50) { // 50 * 100ms = 5s
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (typeof paypal === 'undefined') {
+      container.innerHTML = '<div style="color:#f88;text-align:center;">PayPal SDK no cargado. Desactiva bloqueadores y recarga.</div>';
+      return;
+    }
+
+    paypal.Buttons({
+      style: { color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
+      createOrder: async function(data, actions) {
+        const backendUp = await checkBackendAvailable();
+        if (backendUp) {
+          try {
+            const res = await fetch(API + '/paypal/create-order', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ planId: window.selectedPlanId || selectedPlanId })
+            });
+            const j = await res.json();
+            // backend debe devolver { id: "ORDERID" } o similar
+            if (j && j.id) return j.id;
+            // si no viene id, caer al fallback
+          } catch (e) {
+            console.warn('Error creando orden en backend, usando fallback cliente', e);
+          }
+        }
+        // FALLBACK cliente (acciones de PayPal)
+        const amount = (window.selectedPlanId === '1_MES' ? '7.99' : (window.selectedPlanId === '6_MESES' ? '45.00' : '80.00'));
         return actions.order.create({
-          purchase_units: [{
-            description: selectedPlanId + " GrepoBot Pro",
-            amount: { value: (selectedPlanId === '1_MES' ? '7.99' : (selectedPlanId === '6_MESES' ? '45.00' : '80.00')) }
-          }]
+          purchase_units: [{ description: (window.selectedPlanId || selectedPlanId) + ' GrepoBot Pro', amount: { value: amount } }]
         });
+      },
+      onApprove: async function(data, actions) {
+        const backendUp = await checkBackendAvailable();
+        if (backendUp) {
+          try {
+            const res = await fetch(API + '/paypal/capture-order', {
+              method: 'POST',
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify({ orderID: data.orderID, usuarioId: window.currentUserId, planId: window.selectedPlanId || selectedPlanId })
+            });
+            const j = await res.json();
+            if (j && j.success) {
+              alert('✅ ¡PAGO COMPLETADO! Licencia renovada.');
+              location.reload();
+              return;
+            }
+            // si backend no respondió ok, informar y seguir
+          } catch (e) {
+            console.warn('Error notificando backend de captura:', e);
+            alert('Pago completado pero error al notificar el servidor. Recarga la página.');
+            return;
+          }
+        }
+        // FALLBACK cliente: actualizar UI localmente (demo)
+        alert('Pago completado en sandbox/demo. Gracias por renovar GrepoBot Pro.');
+        const statusDiv = document.getElementById('status-licencia');
+        if (statusDiv) {
+          statusDiv.className = 'alert success';
+          statusDiv.innerHTML = '✅ <b>Licencia Activa</b> (30 días demo)';
+        }
+      },
+      onError: function(err) {
+        console.error('PayPal error:', err);
+        alert('Error con PayPal. Revisa consola, desactiva bloqueadores y prueba de nuevo.');
       }
-    },
-    onApprove: async function(data, actions) {
-      const backendUp = await checkBackendAvailable();
-      if (backendUp) {
-        // captura en backend (tu lógica original)
-        return fetch(API + '/paypal/capture-order', {
-          method: 'post',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId, planId: selectedPlanId })
-        }).then(res => res.json()).then(details => {
-          alert('✅ ¡PAGO COMPLETADO! Licencia renovada.');
-          location.reload();
-        }).catch(e=>{
-          alert('Pago completado pero error al notificar backend. Refresca la página.');
-        });
-      } else {
-        // FALLBACK: orden aprobada en cliente (demo)
-        alert('Pago completado en sandbox (demo). Gracias por renovar GrepoBot Pro.');
-        // Si quieres, aquí puedes actualizar UI sin backend:
-        document.getElementById('status-licencia').className = 'alert success';
-        document.getElementById('status-licencia').innerHTML = '✅ <b>Licencia Activa</b> (30 días demo)';
-      }
-    },
-    onError: function(err) {
-      console.error('PayPal error', err);
-      alert('Error con PayPal. Desactiva bloqueadores y prueba en otro navegador.');
-    }
-  }).render('#paypal-button-container');
-}
+    }).render('#paypal-button-container');
+  }
+
+  // expose functions to global so existing code can call them
+  window.descargarArchivo = descargarArchivo;
+  window.renderPayPalButtons = renderPayPalButtons;
+  window.checkBackendAvailable = checkBackendAvailable;
+
+  // inicializar si el container existe
+  document.addEventListener('DOMContentLoaded', function(){
+    // Si tu código original llama a renderPayPalButtons, esto no interfiere.
+    // Llamamos por si acaso:
+    try { renderPayPalButtons(); } catch(e){ console.warn(e); }
+  });
+
+  return { descargarArchivo, renderPayPalButtons, checkBackendAvailable };
+})();
+</script>
