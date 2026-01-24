@@ -1,20 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>GFIX</title>
-  <!-- ¡OJO! SDK SIEMPRE PRIMERO -->
-  <script src="https://www.paypal.com/sdk/js?client-id=ELfatqhPTNKEgwZ1gIaTJZ97kp-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGsBSlZ&currency=USD"></script>
+    <meta charset="UTF-8">
+    <title>Solo Prueba PayPal</title>
+    <!-- SDK PayPal SIEMPRE el primero en el head, y SOLO UNO -->
+    <script src="https://www.paypal.com/sdk/js?client-id=ELfatqhPTNKEgwZ1gIaTJZ97kp-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGsBSlZ&currency=USD"></script>
 </head>
 <body>
-  <div id="paypal-button-container"></div>
-  <script>
-    paypal.Buttons({
-      createOrder: (data, actions) => actions.order.create({
-        purchase_units: [{ amount: { value: '1.00' } }]
-      }),
-      onApprove: () => alert('OK!')
-    }).render('#paypal-button-container');
-  </script>
+    <h2>Test Botón PayPal</h2>
+    <div id="paypal-button-container"></div>
+    <script>
+        paypal.Buttons({
+            createOrder: function(data, actions) {
+                return actions.order.create({
+                    purchase_units: [{ amount: { value: '1.00' } }]
+                });
+            },
+            onApprove: function(data, actions) {
+                alert('¡Pago sandbox aceptado!');
+            }
+        }).render('#paypal-button-container');
+    </script>
 </body>
 </html>
