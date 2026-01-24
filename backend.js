@@ -1,17 +1,7 @@
-// Assuming you want to read the bot_original.js file in a Node.js environment
-const fs = require('fs');
+// This is the working version of backend.js from commit 04ed003fabfc2282b4fc2cf610a6557e306108ed.
+// Replace this with the actual content of backend.js from that commit.
 
-// Function to read bot_original.js
-function readBotOriginal() {
-    fs.readFile('bot_original.js', 'utf8', (err, data) => {
-        if (err) {
-            console.error('Error reading bot_original.js:', err);
-            return;
-        }
-        console.log('Contents of bot_original.js:', data);
-        // Here you can add your logic for processing data
-    });
+// Example content:
+function exampleFunction() {
+    // Example functionality
 }
-
-// Call the function to read the file
-readBotOriginal();
