@@ -2,228 +2,49 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GrepoBot Pro - Automatización de Élite</title>
-    <!-- PayPal SDK: SIEMPRE primero -->
+    <title>Test GrepoBot</title>
     <script src="https://www.paypal.com/sdk/js?client-id=ARI8xtvx-zlykSa7RFIka_g5C3_iF8-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGs&currency=USD"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #151515; color: #e0e0e0; margin: 0;}
-        .logo { font-size: 32px; color: #4caf50; margin-top:24px; margin-bottom:4px;}
-        .nav { background: #222; padding: 15px; text-align: right;}
-        .nav a, .nav button { color: #4caf50; background: none; border: none; padding:10px 18px; font-size: 16px; cursor:pointer;}
-        .hero { text-align: center; margin-top: 50px;}
-        .cta-button { background: #4caf50; color: #fff; padding: 12px 28px; border: none; border-radius: 5px; font-size: 20px; cursor:pointer;}
-        .manual, .gallery-section { max-width: 800px; margin:32px auto; padding:18px; background: #222; border-radius:8px;}
-        .gallery-section { display: flex; gap:24px; justify-content:center;}
-        .gallery-item img { width:280px;border-radius:8px;border:2px solid #333;}
-        .panel { max-width: 420px; margin: 32px auto; background: #222; padding: 26px; border-radius:8px; }
-        .input-group { margin-bottom: 14px;}
-        .input-group label { display: block; margin-bottom:3px;}
-        .input-group input { border: 1px solid #444; border-radius:4px; background: #222; color: #fff; width: 100%; padding:7px; }
-        .alert { padding:10px; border-radius:5px; margin-bottom:14px; font-size:15px;}
-        .alert.error { background: #ffdddd; color: #d00;}
-        .alert.success { background: #e6ffe6; color: #18831b;}
-        .section { margin-bottom:24px;}
-        .chat-widget { position: fixed; bottom: 20px; right: 20px; z-index: 9999;}
-        .chat-btn { background: #4caf50; width: 55px; height: 55px; border-radius: 50%; border: none; cursor: pointer; font-size: 30px; color: white;}
-        .chat-window { display: none; position: absolute; bottom: 65px; right: 0; width: 340px; height: 440px; background: #232326; border: 1px solid #333; border-radius: 10px; box-shadow: 0 10px 40px #000;}
-        .chat-header { background: #252525; padding: 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
-        .chat-header h3 { margin:0;}
-        .chat-input-area { padding:10px; background:#222; display:flex; gap:6px;}
-        .chat-input-area input { flex:1; border-radius:18px; border:1px solid #555; padding:7px;}
-        .chat-input-area button { background: #4caf50; border:none; color:white; font-size:17px; border-radius:15px; padding:0 16px;}
-        .chat-body { flex:1; padding:10px; overflow-y:auto; display: flex; flex-direction: column; gap:7px;}
-        .msg { padding: 7px 14px; border-radius:14px; max-width: 80%; font-size: 14px;}
-        .msg.bot { background: #444; align-self:flex-start;}
-        .msg.user { background: #4caf50; color: white; align-self:flex-end;}
-        footer { text-align:center;padding:24px;color:#888;font-size:14px;}
-        @media(max-width:530px) {.gallery-section{flex-direction:column;}}
+        body { background: #141414; color: #fff; font-family: Arial; margin:0; }
+        h1 { text-align:center; margin-top:20px;}
     </style>
 </head>
 <body>
-
-<div class="logo">⚔️ GrepoBot Pro</div>
-<div class="nav">
-    <button onclick="document.getElementById('panel').scrollIntoView({behavior:'smooth'})">Portal</button>
-    <a href="#manual">Manual</a>
-    <a href="#gallery">Galería</a>
-</div>
-<div class="hero">
-    <h1>Domina Grepolis <span style="color:#4caf50">automáticamente</span></h1>
-    <p>El bot más avanzado para Grepolis: planificación, ataques perfectos, y soporte IA.</p>
-    <button class="cta-button" onclick="document.getElementById('panel').scrollIntoView({behavior:'smooth'})">PRUEBA DE 7 DÍAS</button>
-</div>
-<div class="manual section" id="manual">
-    <h2>Manual Rápido</h2>
-    <ul>
-        <li>Instala <b>Tampermonkey</b> en tu navegador</li>
-        <li>Regístrate abajo y paga o usa el trial gratuito</li>
-        <li>Pulsa “INSTALAR BOT” en el panel de usuario</li>
-    </ul>
-    <ul>
-        <li>Para atacar: abre la ventana de ataque, pon la hora y pulsa “Capturar” e “Iniciar”</li>
-        <li>Renueva licencia abajo: el pago es automático por PayPal</li>
-    </ul>
-</div>
-<div class="gallery-section section" id="gallery">
-    <div class="gallery-item">
-        <img src="bot1.jpg" alt="bot planner">
-        <p>Planner Preciso</p>
+    <h1>PRUEBA PORTAL GREPOBOT</h1>
+    <div style='text-align:center;margin:2em;'>
+        <input id="user" placeholder="usuario">
+        <input id="pass" type="password" placeholder="pass">
+        <button onclick="acceder()">Entrar</button>
+        <div id="msg-login"></div>
     </div>
-    <div class="gallery-item">
-        <img src="bot2.jpg" alt="menu bot">
-        <p>Menú Completo</p>
-    </div>
-</div>
-<div class="panel section" id="panel">
-    <h2>Portal de Usuario</h2>
-    <div id="login-form">
-        <div class="input-group"><label>Usuario</label>
-        <input type="text" id="user" placeholder="Usuario"></div>
-        <div class="input-group"><label>Contraseña</label>
-        <input type="password" id="pass" placeholder="Contraseña"></div>
-        <button class="cta-button" style="width:100%;" onclick="acceder()">Entrar / Registrar</button>
-        <div id="msg-login" class="alert"></div>
-    </div>
-    <div id="dashboard" style="display:none;">
-        <h3 id="user-display" style="color:#4caf50;"></h3>
-        <div id="status-licencia" class="alert success" style="margin-bottom:20px;">Cargando...</div>
-        <div style="background:#252525; padding:10px; border-radius:6px; margin-bottom:17px;">
-            <h4>Instalación</h4>
-            <p>Instalar script en Tampermonkey</p>
-            <button class="cta-button" style="width:100%;" id="btn-descargar" onclick="descargarArchivo()">📥 INSTALAR BOT</button>
-            <div id="msg-descarga" style="margin-top:8px;font-size:13px;"></div>
-        </div>
-        <div style="background:#252525; padding:10px; border-radius:6px; margin-bottom:6px;">
-            <h4>Renovar Licencia</h4>
-            <div id="paypal-button-container"></div>
+    <!-- Chatbot -->
+    <div class="chat-widget" style="position:fixed;bottom:20px;right:20px;">
+        <button class="chat-btn" onclick="toggleChat()" style="background:#4caf50;width:55px;height:55px;border-radius:50%;border:none;font-size:30px;color:white;">🤖</button>
+        <div class="chat-window" id="chatWindow" style="display:none;position:absolute;bottom:65px;right:0;width:320px;height:380px;background:#232326;border:1px solid #333;border-radius:10px;">
+            <div class="chat-header" style="padding:10px;background:#252525;color:#fff;border-bottom:1px solid #333;display:flex;justify-content:space-between;">
+                <span style="font-size:16px;">Soporte IA GrepoBot</span>
+                <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
+            </div>
+            <div class="chat-body" id="chatBody" style="padding:10px;">
+                <div>Hola 👋 Soy la IA de soporte. ¿En qué puedo ayudarte?<br><br>Ejemplos:<br>- "No me funciona"<br>- "¿Cómo pagar?"<br>- "Instalar"</div>
+            </div>
+            <div class="chat-input-area" style="padding:10px;">
+                <input type="text" id="chatInput" placeholder="Escribe tu duda..." style="width:70%;">
+                <button onclick="sendMessage()">➤</button>
+            </div>
         </div>
     </div>
-</div>
-<!-- Chatbot Soporte IA -->
-<div class="chat-widget">
-    <button class="chat-btn" onclick="toggleChat()">🤖</button>
-    <div class="chat-window" id="chatWindow">
-        <div class="chat-header">
-            <h3>Soporte IA GrepoBot</h3>
-            <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
-        </div>
-        <div class="chat-body" id="chatBody">
-            <div class="msg bot">Hola 👋 Soy la IA de soporte. ¿En qué puedo ayudarte?<br><br>
-            Ejemplos:<br>- "No me funciona"<br>- "¿Cómo pagar?"<br>- "Instalar"</div>
-        </div>
-        <div class="chat-input-area">
-            <input type="text" id="chatInput" placeholder="Escribe tu duda..." onkeypress="if(event.key==='Enter') sendMessage()">
-            <button onclick="sendMessage()">➤</button>
-        </div>
-    </div>
-</div>
-<footer>
-    © 2026 GrepoBot Team. Software educativo.
-</footer>
-<script>
-    // API seguro, solo para Render
-    const API = 'https://grepobot-web.onrender.com/api';
-    let currentUserId = null, selectedPlanId = '1_MES';
-    function acceder() {
-        const u = document.getElementById('user').value;
-        const p = document.getElementById('pass').value;
-        const msg = document.getElementById('msg-login');
-        msg.style.display = "none";
-        if(!u || !p){msg.textContent="⚠️ Faltan datos"; msg.className="alert error";msg.style.display='block';return;}
-        fetch(API+'/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
-        .then(res=>res.json()).then(data=>{
-            if(!data.success){
-                fetch(API+'/registro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:u,password:p})})
-                .then(res=>res.json()).then(data2=>{
-                    procesarLogin(data2,u,msg);
-                });
-            }else{
-                procesarLogin(data,u,msg);
-            }
-        });
+    <footer style="text-align:center;color:#aaa;margin-top:30px;">© 2026 GrepoBot Team. Software educativo.</footer>
+    <script>
+    function acceder(){document.getElementById('msg-login').textContent="Login OK (solo demo)";}
+    function toggleChat(){let win=document.getElementById('chatWindow');win.style.display=(win.style.display==='block')?'none':'block';}
+    function sendMessage(){
+      const input=document.getElementById('chatInput');
+      const text=input.value.trim();
+      if(!text)return;
+      document.getElementById('chatBody').innerHTML+='<div style="color:#4caf50;">'+text+'</div>';
+      input.value='';
     }
-    function procesarLogin(data,u,msg){
-        if(data.success){
-            currentUserId = data.usuarioId;
-            document.getElementById('login-form').style.display='none';
-            document.getElementById('dashboard').style.display='block';
-            document.getElementById('user-display').textContent = "Hola, " + (data.username || u);
-            if(data.dias<=0){
-                statusLic("⛔ LICENCIA CADUCADA<br>Renueva abajo para continuar.","error");
-            }else{
-                statusLic("✅ Licencia activa: "+data.dias+" días","success");
-            }
-            const btnDescargar = document.getElementById('btn-descargar');
-            if(data.yaDescargo){
-                btnDescargar.disabled=true;
-                btnDescargar.style.opacity="0.5";
-                document.getElementById('msg-descarga').innerHTML ='❌ Ya descargaste el bot. Renueva para descargar de nuevo';
-            }else{
-                btnDescargar.disabled = false;
-                btnDescargar.style.opacity = "";
-                document.getElementById('msg-descarga').innerHTML = '✅ Descarga disponible';
-            }
-            renderPayPalButtons();
-        }else{
-            msg.textContent = data.error || "Error"; msg.className="alert error";msg.style.display='block';
-        }
-    }
-    function statusLic(txt,type){
-        const node = document.getElementById('status-licencia');
-        node.textContent = ""; node.className="alert "+type; node.innerHTML = txt; node.style.display = "block";
-    }
-    function descargarArchivo(){
-        if(!currentUserId)return alert("Sesión expirada");
-        window.open(API + '/descargar/' + currentUserId + '/GrepoBot.user.js', "_blank");
-    }
-    function renderPayPalButtons(){
-        document.getElementById('paypal-button-container').innerHTML='';
-        paypal.Buttons({
-            createOrder: function(data, actions){
-                return fetch(API + '/paypal/create-order',{
-                    method: 'post',
-                    headers:{'Content-Type':'application/json'},
-                    body: JSON.stringify({ planId: selectedPlanId })
-                }).then(res=>res.json()).then(orderData=>orderData.id);
-            },
-            onApprove: function(data, actions){
-                return fetch(API + '/paypal/capture-order',{
-                    method: 'post',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId, planId: selectedPlanId })
-                }).then(res=>res.json()).then(details=>{
-                    alert('✅ ¡Licencia renovada!');
-                    location.reload();
-                });
-            }
-        }).render('#paypal-button-container');
-    }
-    // IA chat
-    function toggleChat() {
-        let win = document.getElementById('chatWindow');
-        win.style.display=(win.style.display==='flex')?'none':'flex';
-        win.style.flexDirection="column";
-    }
-    function sendMessage() {
-        const input = document.getElementById('chatInput');
-        const text = input.value.trim();
-        if(!text)return;
-        addMessage(text,'user'); input.value='';
-        setTimeout(()=>addMessage(obtenerRespuestaIA(text.toLowerCase()),'bot'),500);
-    }
-    function addMessage(text,type){
-        const body = document.getElementById('chatBody'),div=document.createElement('div');
-        div.className='msg '+type;div.innerHTML=text;body.appendChild(div);body.scrollTop=body.scrollHeight;
-    }
-    function obtenerRespuestaIA(txt){
-        if(txt.includes('hola')) return "¡Hola! Soy la IA de GrepoBot. ¿En qué te ayudo?";
-        if(txt.includes('pagar')||txt.includes('paypal')) return "Para pagar, inicia sesión y selecciona uno de los planes. El pago es automático.";
-        if(txt.includes('instalar')) return "1. Instala Tampermonkey.<br>2. Inicia sesión.<br>3. Pulsa 'INSTALAR BOT'.";
-        if(txt.includes('no funciona')) return "Comprueba que tu licencia está activa y recarga la web.";
-        if(txt.includes('precio')) return "Planes:<br>- 1 Mes: $7.99<br>- 6 Meses: $45<br>- 1 Año: $80";
-        return "No te entiendo bien. Prueba con 'pagar', 'instalar' o 'precios'.";
-    }
-</script>
+    </script>
 </body>
 </html>
