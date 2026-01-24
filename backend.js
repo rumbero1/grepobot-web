@@ -5,7 +5,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 const app = express();
-const PORT = 10000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -23,6 +23,7 @@ db.serialize(() => {
     )`);
 });
 
+// LOGIN
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.get('SELECT * FROM usuarios WHERE username = ?', [username], (err, user) => {
@@ -39,6 +40,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// REGISTRO
 app.post('/api/registro', (req, res) => {
     const { username, password } = req.body;
     if(!username || !password) return res.json({ success: false, error: 'Faltan datos' });
@@ -56,31 +58,33 @@ app.post('/api/registro', (req, res) => {
         }
     );
 });
+
+// DESCARGA (con los headers correctos para Tampermonkey)
 app.get('/api/descargar/:usuarioId/:filename', (req, res) => {
     const { usuarioId, filename } = req.params;
-    const fs = require('fs');
     
     db.get('SELECT * FROM usuarios WHERE id = ?', [usuarioId], (err, user) => {
         if(err || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
         if(user.yaDescargo) return res.status(403).json({ error: 'Ya descargaste el bot' });
         
-        try {
-            const botCode = fs.readFileSync(path.join(__dirname, 'bot_original.js'), 'utf-8');
+        const fs = require('fs');
+        const botPath = path.join(__dirname, 'bot_original.js');
+        if (fs.existsSync(botPath)) {
+            const botCode = fs.readFileSync(botPath, 'utf8');
             db.run('UPDATE usuarios SET yaDescargo = 1 WHERE id = ?', [usuarioId]);
             res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-            res.setHeader('Content-Type', 'application/x-javascript; charset=utf-8');
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
             res.send(botCode);
-        } catch(e) {
-            res.status(500).json({ error: 'Error leyendo bot' });
+        } else {
+            res.status(404).send('// Error: bot_original.js no encontrado');
         }
     });
 });
 
-
+// PAYPAL SIMULADO
 app.post('/api/paypal/create-order', (req, res) => {
     res.json({ id: 'TEST_' + Date.now() });
 });
-
 app.post('/api/paypal/capture-order', (req, res) => {
     const { usuarioId, planId } = req.body;
     const diasPlan = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 };
@@ -95,8 +99,6 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log('\n✅ SERVIDOR LISTO en puerto 10000');
-    console.log('🌐 URL: http://localhost:10000\n');
-
+    console.log('\n✅ SERVIDOR LISTO en puerto ' + PORT);
+    console.log('🌐 URL: http://localhost:' + PORT + '\n');
 });
-
