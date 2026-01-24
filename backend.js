@@ -56,44 +56,26 @@ app.post('/api/registro', (req, res) => {
         }
     );
 });
-
 app.get('/api/descargar/:usuarioId/:filename', (req, res) => {
     const { usuarioId, filename } = req.params;
+    const fs = require('fs');
     
     db.get('SELECT * FROM usuarios WHERE id = ?', [usuarioId], (err, user) => {
         if(err || !user) return res.status(404).json({ error: 'Usuario no encontrado' });
         if(user.yaDescargo) return res.status(403).json({ error: 'Ya descargaste el bot' });
         
-        const botCode = `// ==UserScript==
-// @name         Bot Grepolis - V11.80 ULTIMATE
-// @namespace    http://tampermonkey.net/
-// @version      11.80.1
-// @description  V11.80: Academy Global Search + Recruit Multi-Window + UI Fixes.
-// @author       TuNombre
-// @match        https://*.grepolis.com/game/*
-// @grant        none
-// @run-at       document-idle
-// ==/UserScript==
-
-(function() {
-    'use strict';
-    console.log('🤖 GrepoBot V11.80 INSTALADO');
-    
-    const panel = document.createElement('div');
-    panel.id = 'grepobot-panel';
-    panel.style.cssText = 'position:fixed;bottom:20px;left:20px;width:300px;background:#1a1a2f;border:2px solid #4caf50;border-radius:10px;padding:15px;color:#e0e0e0;font-family:Arial,sans-serif;z-index:99999;box-shadow:0 4px 15px rgba(76,175,80,0.4);';
-    
-    panel.innerHTML = '<div style="text-align:center;"><h3 style="margin:0;color:#4caf50;">⚔️ GrepoBot V11.80</h3></div>';
-    
-    document.body.appendChild(panel);
-})();`;
-        
-        db.run('UPDATE usuarios SET yaDescargo = 1 WHERE id = ?', [usuarioId]);
-        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-        res.setHeader('Content-Type', 'application/x-javascript; charset=utf-8');
-        res.send(botCode);
+        try {
+            const botCode = fs.readFileSync(path.join(__dirname, 'bot_original.js'), 'utf-8');
+            db.run('UPDATE usuarios SET yaDescargo = 1 WHERE id = ?', [usuarioId]);
+            res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+            res.setHeader('Content-Type', 'application/x-javascript; charset=utf-8');
+            res.send(botCode);
+        } catch(e) {
+            res.status(500).json({ error: 'Error leyendo bot' });
+        }
     });
 });
+
 
 app.post('/api/paypal/create-order', (req, res) => {
     res.json({ id: 'TEST_' + Date.now() });
@@ -117,3 +99,4 @@ app.listen(PORT, () => {
     console.log('🌐 URL: http://localhost:10000\n');
 
 });
+
