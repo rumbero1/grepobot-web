@@ -1,11 +1,17 @@
+// Assuming you want to read the bot_original.js file in a Node.js environment
 const fs = require('fs');
 
-// Load the complete bot code from bot_original.js file
-const botCode = fs.readFileSync('bot_original.js', 'utf8');
+// Function to read bot_original.js
+function readBotOriginal() {
+    fs.readFile('bot_original.js', 'utf8', (err, data) => {
+        if (err) {
+            console.error('Error reading bot_original.js:', err);
+            return;
+        }
+        console.log('Contents of bot_original.js:', data);
+        // Here you can add your logic for processing data
+    });
+}
 
-// Serve the botCode when downloading
-app.get('/download-bot', (req, res) => {
-    res.setHeader('Content-disposition', 'attachment; filename=bot.js');
-    res.setHeader('Content-Type', 'application/javascript');
-    res.send(botCode);
-});
+// Call the function to read the file
+readBotOriginal();
