@@ -1,64 +1,20 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>GrepoBot Pro - Renovar Licencia</title>
-    <!-- SDK PayPal sandbox, ¡SIEMPRE PRIMERO! -->
-    <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
-    <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #191919; color: #e0e0e0; margin:0;}
-        .centerbox { background:#232323; max-width:420px; margin:40px auto; border-radius:12px; padding:28px; }
-        h1 { color: #ffd700; text-align:center; }
-        h2 { text-align:center; color:#4caf50; }
-        .plans { display:flex; gap:10px; justify-content:center; margin-bottom:20px;}
-        .plan-btn {font-size:17px;padding:12px 18px;min-width:110px;background:#2c2c26;border:2px solid #ffd700;color:#ffd700;border-radius:7px;cursor:pointer;}
-        .plan-btn.selected {background:#ffd700;color:#222; }
-        #paypal-area { margin-top:22px; text-align:center;}
-        .alert {color:#fff;background:#4caf50;border-radius:9px;padding:9px 12px;margin-bottom:14px;}
-    </style>
+  <meta charset="UTF-8">
+  <title>Test PayPal Mínimo</title>
+  <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
 </head>
 <body>
-<div class="centerbox">
-    <h1>💎 Renovar Licencia</h1>
-    <div class="alert" id="welcome-msg">Selecciona tu plan y paga con PayPal o tarjeta</div>
-    <div class="plans">
-        <button class="plan-btn selected" onclick="seleccionarPlan('1M',7.99,this)">1 Mes<br>$7.99</button>
-        <button class="plan-btn" onclick="seleccionarPlan('6M',45.00,this)">6 Meses<br>$45.00</button>
-        <button class="plan-btn" onclick="seleccionarPlan('12M',80.00,this)">1 Año<br>$80.00</button>
-    </div>
-    <div id="paypal-area">
-        <!-- Aquí aparecerá el botón de PayPal al seleccionar un plan -->
-    </div>
-</div>
-<script>
-    // Plan activo (default: 1 mes)
-    let plan = {id: '1M', amount: 7.99};
-    function seleccionarPlan(pid, amt, btn){
-        plan = {id: pid, amount: amt};
-        // Quitar seleccion
-        document.querySelectorAll('.plan-btn').forEach(b=>b.classList.remove('selected'));
-        btn.classList.add('selected');
-        mostrarBotonPayPal();
-    }
-    // Mostrar sólo 1 vez el botón por cambio de plan
-    function mostrarBotonPayPal() {
-        document.getElementById('paypal-area').innerHTML = ''; // limpia el contenedor siempre
-        paypal.Buttons({
-            style: { color: 'gold', shape: 'rect', label: 'paypal', height: 45 },
-            createOrder: (data, actions) => actions.order.create({
-                purchase_units: [{ description: "Licencia GrepoBot (" + plan.id + ")", amount: { value: plan.amount.toFixed(2) } }]
-            }),
-            onApprove: function(data, actions) {
-                // Puedes hacer lógica extra aquí!
-                document.getElementById('welcome-msg').textContent = '✅ ¡Pago completado correctamente!';
-                return actions.order.capture().then(function(details){
-                    alert('¡Gracias, '+details.payer.name.given_name+'! Tu pago de $'+plan.amount+' fue aceptado en sandbox.');
-                });
-            }
-        }).render('#paypal-area');
-    }
-    // Inicializa primer botón
-    window.onload = mostrarBotonPayPal;
-</script>
+  <h2>Test Botón PayPal</h2>
+  <div id="paypal-button-container"></div>
+  <script>
+    paypal.Buttons({
+      createOrder: (data, actions) => actions.order.create({
+        purchase_units: [{ amount: { value: '1.00' } }]
+      }),
+      onApprove: () => alert('Pago ok!')
+    }).render('#paypal-button-container');
+  </script>
 </body>
 </html>
