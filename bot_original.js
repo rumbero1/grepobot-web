@@ -122,7 +122,9 @@
         const panel = document.createElement('div');
         panel.id = PANEL_ID;
         panel.style.cssText = 'position:fixed;left:20px;bottom:20px;z-index:9999;background:#1e1e2f;color:#fff;padding:8px;border-radius:6px;font-family:Arial,sans-serif;font-size:11px;cursor:pointer;border:2px solid #444;box-shadow:0 0 10px #000;';
-       
+        panel.innerHTML = `<strong>🤖 V11.39</strong>`;
+        panel.onclick = criarPanelEncaixe;
+        document.body.appendChild(panel);
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
@@ -135,7 +137,7 @@
             }
         });
 
-        criarPanelEncaixe();
+        setTimeout(criarPanelEncaixe, 500);
     }
 
     function criarPanelEncaixe() {
@@ -2288,5 +2290,4 @@
             else setTimeout(init, 500);
         })();
     }
-
 })();
