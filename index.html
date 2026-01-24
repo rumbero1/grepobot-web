@@ -2,149 +2,173 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>GrepoBot Pro - Automatizador Grepolis</title>
+  <title>GrepoBot Pro — Automatiza tu Grepolis</title>
+  <!-- SDK PayPal sandbox, usa tu client-id real para producción -->
   <script src="https://www.paypal.com/sdk/js?client-id=AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT&currency=USD"></script>
   <style>
-    body {background:#191c22;color:#eef;font-family:'Segoe UI',Arial,sans-serif;margin:0;}
-    .container {max-width:610px;margin:48px auto 36px auto;background:#21262e;border-radius:16px;box-shadow:0 11px 38px #0006;padding:0 0 34px 0;}
-    .banner {padding:34px 32px 14px 32px;}
-    h1 {font-size:2.4em;margin:0;color:#ffd700;text-align:left;}
-    .logo-bot {width:70px;float:left;margin-right:20px;}
-    .intro {font-size:18px;color:#baffc7;padding-bottom:7px;}
-    .pay-section {margin:32px 0 0 0;padding:23px 32px;background:#232f3a;border-radius:12px;}
-    .planes {display:flex;gap:10px;justify-content:center;margin-bottom:19px;}
+    body { background:#171c21; color: #ececec; font-family: 'Segoe UI', Arial, sans-serif; margin:0;}
+    .container { max-width:660px; margin:44px auto 22px auto; border-radius:18px; background:#232834; box-shadow:0 8px 32px #0007; padding:0 0 28px 0;}
+    h1 { color:#ffd700; font-size:2.3em; text-align:center; margin:0;padding-top:38px;}
+    .subtitle { text-align:center; color:#a7e5c7; margin-bottom:17px;}
+    .imgr {text-align:center;}
+    .imgr img {max-width:95%; width:320px; border-radius:14px; box-shadow:0 4px 16px #0006; margin-bottom:13px;}
+    .switch {display:flex;justify-content:center;gap:18px;margin-top:18px;}
+    .infobox {background:#202a2e;border-radius:13px;padding:13px 22px;margin:15px 32px 15px 32px;}
+    .infobox-title {color:#ffd700;font-weight:bold;}
+    .difftable {width:100%; margin:13px 0 23px 0; border-spacing:0; font-size:15px;}
+    .difftable th,.difftable td{border-bottom:1px solid #363b50;padding:7px 6px;}
+    .cta-btn {background:#38dbb1;font-weight:bold;color:#262d22;border-radius:7px;padding:15px 0;width:100%;margin:11px 0 7px 0;cursor:pointer;border:none;font-size:17px;}
+    .planes {display:flex;gap:11px;justify-content:center;margin-bottom:10px;margin-top:8px;}
     .plan {background:#ffd700;color:#232323;font-weight:bold;border:2px solid #fff3;min-width:121px;text-align:center;border-radius:7px;padding:14px 8px;cursor:pointer;}
-    .plan.selected {border:2px solid #34e1c6;background:#232323;color:#ffd700;}
-    #paypal-area {margin:21px 0 0 0;}
-    .blue-btn {background:#33aafe;color:#fff;font-weight:bold;border-radius:7px;padding:15px 0;width:100%;margin-top:11px;cursor:pointer;border:none;font-size:18px;}
-    .section {margin:0 32px 0 32px;}
-    .block {background:#232c37;border-radius:11px;padding:16px 19px;margin-bottom:21px;}
-    .block h2 {color:#ffd700;margin:0 0 10px 0;}
-    ol, ul {margin-top:6px;}
-    .faq {margin-top:13px;}
-    .faq-q {color:#98aaff;font-weight:bold;}
-    .faq-a {color:#ffe083;padding-left:7px;}
-    .bot-demo {background:#171f37;border-radius:8px;padding:19px;margin-bottom:18px;}
-    .bot-demo label {font-size:15px;color:#ffd700;}
-    .bot-demo input {width:74%;border-radius:6px;padding:7px;border:1px solid #353b58;background:#232f44;color:#fff;font-size:15px;}
+    .plan.selected {border:2.3px solid #38dbb1;background:#232323;color:#ffd700;}
+    #paypal-area{margin:20px 0 0 0;}
+    .bot-demo {background:#171f37;border-radius:9px;padding:15px 19px; margin:14px 32px;}
+    .bot-demo label {font-size:16px;color:#ffd700;}
+    .bot-demo input {width:65%;border-radius:6px;padding:7px;border:1px solid #353b58;background:#232f44;color:#fff;font-size:16px;}
     #outputia {color:#cdf274;margin:6px 0 0 0;min-height:33px;}
-    .support {margin-top:14px;font-size:14px;}
-    a {color:#33aafe;text-decoration:none;}
-    .hr {margin:18px 0 25px 0;border:0; height:1px; background:#2e425d;}
-    @media(max-width:700px){.container{max-width:99vw;}.banner,.block,.pay-section,.section{padding:18px;}}
+    .support {margin:16px 32px 0 32px;font-size:15px;}
+    a {color:#31aedc;}
+    .hr {margin:25px 0 19px 0; border:0; height:1px; background:#313d4b;}
+    @media(max-width:750px){
+      .container {max-width:99vw;}
+      .imgr img {width:97vw;}
+      .infobox,.bot-demo,.support {margin-left:8px; margin-right:8px;}
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="banner">
-      <img src="https://cdn-icons-png.flaticon.com/512/4712/4712027.png" class="logo-bot" alt="GrepoBot">
-      <h1>GrepoBot Pro</h1>
-      <div class="intro">Automatiza <b>Grepolis</b> de manera profesional.<br>
-        Farmea aldeas, gestiona ciudades, programa tus ataques y multiplica tus puntos <b>desde tu PC</b>.</div>
+    <h1>GrepoBot Pro</h1>
+    <div class="subtitle">El mejor bot para automatizar Grepolis — Básico y Premium</div>
+    <!-- IMÁGENES DEL BOT -->
+    <div class="imgr">
+      <div class="switch">
+        <div>
+          <b>Básico</b><br>
+          <img src="bot-basico.jpg" alt="Bot Básico"><br>
+          <span style="color:#aaf">Acceso gratuito</span>
+        </div>
+        <div>
+          <b>Premium</b><br>
+          <img src="bot-premium.jpg" alt="Bot Premium"><br>
+          <span style="color:#ffe483;">Funciones avanzadas</span>
+        </div>
+      </div>
     </div>
-    <hr class="hr">
-    <div class="section block">
-      <h2>¿Cómo instalar el bot?</h2>
-      <ol>
-        <li><b>Instala Tampermonkey</b> en tu navegador (<a href="https://tampermonkey.net/" target="_blank">descargar aquí</a>).</li>
-        <li>Haz clic en el siguiente botón para instalar GrepoBot Pro:<br>
-          <button class="blue-btn" onclick="descargarBot()">⬇ Instalar GrepoBot Pro</button>
-        </li>
-        <li>Accede a Grepolis y activa tu licencia en el panel del bot.</li>
-      </ol>
-      <div id="msg-download"></div>
-    </div>
-    <div class="section block">
-      <h2>¿Cómo funciona?</h2>
-      <ul>
-        <li>El bot automatiza la recolección de recursos, envía ataques y saqueos, gestiona cultura, academias y tropas.</li>
-        <li>Simula acciones humanas para evitar bloqueos y es configurable (intervalos, objetivos, preferencia de aldeas, etc).</li>
-        <li>Compatible con los mundos actuales y con varios tipos de cuentas.</li>
-        <li>Panel intuitivo: activar/desactivar módulos, ver logs y estadísticas.</li>
+    <!-- DIFERENCIAS/VERSIONES -->
+    <div class="infobox">
+      <div class="infobox-title">🔎 ¿Qué diferencia hay entre Básico y Premium?</div>
+      <table class="difftable">
+        <tr>
+          <th></th><th>Básico</th><th>Premium</th>
+        </tr>
+        <tr>
+          <td>Farmear aldeas</td><td style="color:lightgreen;">Sí</td><td style="color:lightgreen;">Sí</td>
+        </tr>
+        <tr>
+          <td>Gestión automática de ciudades</td><td style="color:#faa">Parcial</td><td style="color:lightgreen;">Completa</td>
+        </tr>
+        <tr>
+          <td>Limpieza colonos y ataque auto</td><td style="color:#faa">No</td><td style="color:lightgreen;">Sí</td>
+        </tr>
+        <tr>
+          <td>Módulo cultura y templos</td><td style="color:#faa">No</td><td style="color:lightgreen;">Sí</td>
+        </tr>
+        <tr>
+          <td>Panel de configuración avanzado</td><td style="color:#faa">No</td><td style="color:lightgreen;">Sí</td>
+        </tr>
+        <tr>
+          <td>Soporte/actualizaciones</td><td>Comunidad</td><td>Prioritario</td>
+        </tr>
+      </table>
+      <ul style="margin-bottom:0;">
+        <li>La versión <b>básica</b> es limitada y para aprender. La <b>premium</b> desbloquea todo el potencial del bot.</li>
       </ul>
-      <div style="margin-top:7px;">* No requiere configuración avanzada, solo instalar y activar licencia.</div>
     </div>
-    <div class="section block">
-      <h2>Preguntas frecuentes (IA de soporte)</h2>
-      <div class="bot-demo">
-        <label>Pregunta cualquier duda sobre GrepoBot Pro:</label><br>
-        <input id="qia" type="text" placeholder="Ej: ¿Cómo evito ser baneado?">
-        <button onclick="demoIA()" style="margin-left:6px;">Preguntar</button>
-        <div id="outputia"></div>
-      </div>
-      <div class="faq">
-        <div class="faq-q">¿Es seguro usar GrepoBot Pro?</div>
-        <div class="faq-a">El bot simula intervalos humanos y no envía patrones detectables. Miles de usuarios activos.</div>
-        <div class="faq-q">¿Qué puedo automatizar?</div>
-        <div class="faq-a">Saqueo de aldeas, construcción, cultura, ataques, gestión de templos y limpieza de tropas.</div>
-        <div class="faq-q">¿Puedo configurar qué ciudades automatizar?</div>
-        <div class="faq-a">Sí, en el panel puedes elegir ciudades y tareas por ciudad.</div>
-        <div class="faq-q">¿Funciona en móvil?</div>
-        <div class="faq-a">No, solo desde PC y navegador compatible con Tampermonkey.</div>
-        <div class="faq-q">¿Qué hago si no me funciona?</div>
-        <div class="faq-a">Contacta con soporte abajo, o describe tu caso en el chat IA.</div>
-      </div>
+    <!-- INSTRUCCIONES DETALLADAS -->
+    <div class="infobox">
+      <div class="infobox-title">🛠 ¿Cómo instalar y usar el bot?</div>
+      <ol style="margin-bottom:5px;">
+        <li>Instala <b>Tampermonkey</b> en tu navegador (<a href="https://tampermonkey.net/" target="_blank">Descargar</a>).</li>
+        <li>Clic en “⏬ Instalar GrepoBot” para añadir el script.</li>
+        <li>Actualiza Grepolis y verás el panel de control bot en el juego.</li>
+        <li>Introduce tu licencia (premium) en el panel para desbloquear extras.</li>
+        <li>Configura módulos: farmeo, ataques auto, limpieza y cultura como prefieras.</li>
+        <li>Si tienes dudas, usa el chat de soporte IA o contacta abajo.</li>
+      </ol>
+      <button class="cta-btn" onclick="descargarBot()">⏬ Instalar GrepoBot</button>
+      <div id="msg-download" style="font-size:14px;color:#b9ffce;"></div>
     </div>
-    <div class="section block">
-      <h2>Renovar Licencia</h2>
-      <div>Elige duración y paga con PayPal o tarjeta (sandbox DEMO):</div>
-      <div class="planes" style="margin-top:12px;">
+    <!-- SOPORTE IA AVANZADO -->
+    <div class="bot-demo">
+      <label>Soporte GrepoBot (IA): pregunta cualquier cosa técnica o de funcionalidad</label><br>
+      <input id="qia" type="text" placeholder="Ej: ¿Cómo se configura el módulo cultura?">
+      <button onclick="demoIA()" style="margin-left:6px;">Preguntar</button>
+      <div id="outputia"></div>
+    </div>
+    <!-- RENOVAR LICENCIA / PAGO -->
+    <div class="infobox">
+      <div class="infobox-title">💳 Renovar o activar Licencia Premium</div>
+      <div style="font-size:15px;">Elige tu plan y paga con PayPal o tarjeta:</div>
+      <div class="planes">
         <div class="plan selected" onclick="eligePlan(1,7.99,this)">1 Mes<br>$7.99</div>
-        <div class="plan" onclick="eligePlan(6,45.00,this)">6 Meses<br>$45.00</div>
-        <div class="plan" onclick="eligePlan(12,80.00,this)">1 Año<br>$80.00</div>
+        <div class="plan" onclick="eligePlan(6,45,this)">6 Meses<br>$45.00</div>
+        <div class="plan" onclick="eligePlan(12,80,this)">1 Año<br>$80.00</div>
       </div>
       <div id="paypal-area"></div>
     </div>
-    <div class="section support">
+    <!-- SOPORTE -->
+    <div class="support">
       <hr class="hr">
-      <b>¿Necesitas ayuda personalizada?</b><br>
-      Email: <a href="mailto:soporte@grepobotpro.com">soporte@grepobotpro.com</a><br>
-      Telegram: <a href="https://t.me/grepobotpro" target="_blank">@grepobotpro</a>
+      <b>Soporte:</b><br>
+      Contacta en <a href="mailto:soporte@grepobotpro.com">soporte@grepobotpro.com</a> o <a href="https://t.me/grepobotpro" target="_blank">@grepobotpro</a>
     </div>
-    <div style="text-align:center;color:#a6e6ff;padding-top:29px;font-size:14px;">
-      Copyright © 2026 GrepoBot Pro - Desarrollado por <a href="https://grepobotpro.com" target="_blank">GrepoBot Team</a>
+    <div style="text-align:center;color:#a6e6ff;padding-top:24px;font-size:14px;">
+      Copyright © 2026 GrepoBot Pro
     </div>
   </div>
 <script>
-  // Botón descarga simulado
   function descargarBot() {
-    document.getElementById('msg-download').textContent = "Demo: aquí se descargaría GrepoBotPro.user.js";
-    // window.open('https://tudominio.com/GrepoBotPro.user.js');
+    window.open('GrepoBot.user.js');
+    document.getElementById('msg-download').textContent = "Descarga iniciada: GrepoBot.user.js";
   }
-  // IA FAQ demo extendida
+  // Soporte IA AVANZADO
   function demoIA() {
-    let pregunta = (document.getElementById('qia').value || '').toLowerCase();
+    let q = (document.getElementById('qia').value || '').toLowerCase(), res = "";
     let box = document.getElementById('outputia');
-    if(!pregunta.trim()){ box.innerHTML = "<span style='color:#f99;'>Escribe tu pregunta.</span>"; return;}
-    if(pregunta.includes("ban")||pregunta.includes("seguridad"))
-      box.innerHTML = "GrepoBot simula tiempos humanos y distribuye tareas para minimizar el riesgo de ban. Usa intervalos altos y alterna módulos.";
-    else if(pregunta.includes("instal")||pregunta.includes("tampermonkey"))
-      box.innerHTML = "Debes tener Tampermonkey instalado. Haz clic en 'Instalar GrepoBot Pro' y acepta la instalación.";
-    else if(pregunta.includes("ataque"))
-      box.innerHTML = "Puedes programar ataques automáticos desde el panel, fijando tiempos y objetivos, con múltiples ciudades.";
-    else if(pregunta.includes("ciudad")||pregunta.includes("gestiona"))
-      box.innerHTML = "En el panel eliges qué ciudades automatizar y qué módulos activar por cada una.";
-    else if(pregunta.includes("móvil"))
-      box.innerHTML = "Solo funciona en PC porque Tampermonkey no es compatible en móvil.";
-    else if(pregunta.includes("actualiza")||pregunta.includes("actualización")||pregunta.includes("update"))
-      box.innerHTML = "Las actualizaciones del bot son automáticas. Al recargar Grepolis con Tampermonkey se instala la última versión.";
-    else if(pregunta.includes("error")||pregunta.includes("problema")||pregunta.includes("no funciona"))
-      box.innerHTML = "Prueba recargar Grepolis y Tampermonkey. Si sigue el problema, contacta por Telegram o email arriba.";
-    else if(pregunta.includes("licencia")||pregunta.includes("pago"))
-      box.innerHTML = "Compra tu licencia y pégala en el panel del bot para activarlo. Pagos por PayPal y tarjeta.";
-    else if(pregunta.includes("farmea")||pregunta.includes("aldea"))
-      box.innerHTML = "El bot hace saques automáticos a aldeas de forma cíclica, optimizando puntos y recursos a tu ritmo.";
-    else if(pregunta.includes("soporte")||pregunta.includes("contacto"))
-      box.innerHTML = "Escríbenos por email o Telegram (links abajo) y responde un humano experto en GrepoBot.";
+    if(!q.trim()){ box.innerHTML = "<span style='color:#f99;'>Escribe tu pregunta.</span>"; return;}
+    if(q.includes("instal")||q.includes("tampermonkey"))
+      res = "Necesitas Tampermonkey, luego pulsa 'Instalar GrepoBot'. El bot se activa solo y verás el panel en Grepolis.";
+    else if(q.match(/premium|diferencia|(qué|que).*basico/i))
+      res = "La versión premium incluye: limpieza automática, cultura, ataques avanzados, y panel completo; la básica sólo farmea.";
+    else if(q.includes("farmea")||q.includes("aldea")) 
+      res = "Puedes configurar intervalos de farmeo y qué ciudades usar. Todo automático en premium.";
+    else if(q.includes("ataque")||q.includes("auto-ataque")||q.includes("programa")) 
+      res = "El panel del bot te deja programar ataques a ciertas ciudades o jugadores con horarios variables.";
+    else if(q.match(/cultura|eventos|festival/))
+      res = "El módulo Premium automatiza la cultura: inicia teatro, juegos y recicla cultura con tus recursos.";
+    else if(q.match(/panel|interfaz|configur(a|ó|o)/))
+      res = "El panel aparece dentro de Grepolis, desde el menú derecho. Ahí activas o desactivas módulos, cambias licencias, ves logs y estadísticas.";
+    else if(q.match(/actualiza|update|actualización/))
+      res = "El bot se actualiza solo; cada vez que recargas Grepolis tendrás la última versión.";
+    else if(q.match(/ban|seguridad|seguro|baneo/))
+      res = "El bot usa delays aleatorios y simula clicks humanos. No hay reports de bans si usas intervalos lógicos.";
+    else if(q.match(/error|no funciona|problema/))
+      res = "Asegúrate de tener Tampermonkey activado, la licencia al día, y el juego Grepolis abierto. Si sigue el problema, contacta soporte por Telegram o email.";
+    else if(q.match(/licencia|pago|comprar/))
+      res = "Compra aquí tu licencia y pégala en el panel del bot. Se activa en segundos tras el pago PayPal/tarjeta.";
+    else if(q.match(/soporte|contacto|ayuda/))
+      res = "Puedes escribirnos abajo por email, Telegram o usar este chat IA para dudas técnicas.";
     else
-      box.innerHTML = "Pregunta cualquier cosa sobre el bot, instalación, configuración, ban, licencias, soporte.";
+      res = "Pregunta lo que quieras sobre módulos, configuración, licencia, diferencias, instalar o actualizaciones.";
+    box.innerHTML = res;
   }
-  // Licencia y PayPal
+  // PayPal
   let plan = { meses: 1, precio: 7.99 };
-  function eligePlan(meses, precio, elem){
+  function eligePlan(meses, precio, el){
     plan = {meses, precio};
-    document.querySelectorAll('.plan').forEach(p=>p.classList.remove('selected'));
-    elem.classList.add('selected');
+    document.querySelectorAll('.plan').forEach(pl=>pl.classList.remove('selected'));
+    el.classList.add('selected');
     muestraPayPal();
   }
   function muestraPayPal(){
