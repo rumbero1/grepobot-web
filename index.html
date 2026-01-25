@@ -1,140 +1,255 @@
-<script>
-  // Carga tolerante del SDK de PayPal y render seguro de botones
-  function loadPayPalSdkAndRenderButtons(containerSelector) {
-    const meta = document.querySelector('meta[name="paypal-client-id"]');
-    const clientId = meta ? meta.content.trim() : '';
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GrepoBot Web</title>
 
-    // Si no hay client id, no cargamos nada y devolvemos
-    if (!clientId) {
-      console.warn('PayPal client-id no configurado en meta[name="paypal-client-id"]');
-      hidePayPalContainer(containerSelector);
-      return;
-    }
+  <!-- PAYPAL: sandbox client-id (no incluir secret en frontend) -->
+  <meta name="paypal-client-id" content="AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT">
 
-    const sdkBase = 'https://www.paypal.com/sdk/js';
-    const sdkUrl = `${sdkBase}?client-id=${encodeURIComponent(clientId)}&currency=USD`;
+  <style>
+    :root{--primary:#4caf50;--dark:#121212;--text:#e0e0e0}
+    body{font-family:Segoe UI, Roboto, Arial;background:var(--dark);color:var(--text);margin:0}
+    nav{padding:20px 30px;display:flex;justify-content:space-between;align-items:center;background:#0f0f0f;border-bottom:1px solid #222}
+    .logo{color:var(--primary);font-weight:700}
+    .container{padding:40px}
+    .card{background:#1c1c1c;padding:20px;border-radius:8px;margin-bottom:18px}
+    .btn{background:var(--primary);color:#fff;padding:10px 14px;border-radius:6px;border:0;cursor:pointer}
+    .muted{color:#aaa;font-size:14px}
+    #paypal-area{margin-top:12px}
+  </style>
 
-    // Evitar cargar dos veces; comprobar si ya hay un script con el mismo src (base)
-    const already = Array.from(document.scripts).some(s => s.src && s.src.startsWith(sdkBase));
-    if (already) {
-      // si existe, esperar un poco y tratar de renderizar, con fallback si no aparece paypal
-      waitForPaypalThenRender(containerSelector);
-      return;
-    }
+  <!-- Tolerant PayPal loader + Download & Login glue (no secrets here) -->
+  <script>
+    (function(){
+      const API = location.origin;
+      let currentUserId = Number(localStorage.getItem('currentUserId')) || null;
 
-    const s = document.createElement('script');
-    s.src = sdkUrl;
-    s.async = true;
-
-    s.onload = () => {
-      console.log('PayPal SDK cargado OK');
-      waitForPaypalThenRender(containerSelector);
-    };
-    s.onerror = (e) => {
-      console.error('Error cargando PayPal SDK', e);
-      // Mostrar mensaje al usuario y no bloquear la página
-      hidePayPalContainer(containerSelector);
-      showPayPalErrorNotice('No se pudo cargar PayPal. Desactiva bloqueadores o prueba otro navegador.');
-    };
-    document.head.appendChild(s);
-
-    // timeout por si tarda o queda pendiente
-    setTimeout(() => {
-      if (typeof paypal === 'undefined') {
-        console.warn('PayPal SDK no disponible tras timeout');
-        hidePayPalContainer(containerSelector);
-      }
-    }, 8000);
-  }
-
-  function waitForPaypalThenRender(containerSelector) {
-    const maxWait = 8000;
-    const interval = 200;
-    let waited = 0;
-    const t = setInterval(() => {
-      if (typeof paypal !== 'undefined') {
-        clearInterval(t);
-        try {
-          renderPayPalButtons(containerSelector);
-        } catch (e) {
-          console.error('Error renderizando botones PayPal', e);
-          hidePayPalContainer(containerSelector);
+      // Guardar usuarioId después de login (llamar a esta función desde el flujo de login)
+      window.handleLoginResponse = function(respJson){
+        if (respJson && respJson.success && respJson.usuarioId){
+          currentUserId = respJson.usuarioId;
+          localStorage.setItem('currentUserId', String(currentUserId));
         }
-      } else {
-        waited += interval;
-        if (waited >= maxWait) {
-          clearInterval(t);
-          console.warn('paypal no disponible después de esperar');
-          hidePayPalContainer(containerSelector);
+      };
+
+      // Descargar userscript vía API por usuarioId
+      window.descargarArchivo = function(){
+        if (!currentUserId){
+          alert('Debes iniciar sesión antes de descargar.');
+          return;
         }
+        const url = `${API}/api/descargar/${currentUserId}/GrepoBot.user.js`;
+        // forzar navegación a la url de descarga
+        window.location.href = url;
+      };
+
+      // Mostrar aviso discreto
+      function showPayPalErrorNotice(msg){
+        if (document.querySelector('.paypal-error-notice')) return;
+        const notice = document.createElement('div');
+        notice.className = 'paypal-error-notice';
+        notice.style.cssText = 'background:#fff4f4;color:#8b0000;padding:10px;border-radius:6px;margin:10px 0;font-size:13px';
+        notice.innerText = msg;
+        const parent = document.querySelector('#paypal-area') || document.body;
+        parent.insertBefore(notice, parent.firstChild);
       }
-    }, interval);
-  }
+      function hidePayPalContainer(sel){
+        const c = document.querySelector(sel);
+        if (c) c.style.display = 'none';
+      }
 
-  function renderPayPalButtons(containerSelector) {
-    // seguridad extra: comprobar antes de usar paypal
-    if (typeof paypal === 'undefined') {
-      throw new Error('paypal SDK no disponible (render cancelado)');
-    }
+      // Loader tolerante del SDK de PayPal
+      function loadPayPalSdkAndRenderButtons(containerSelector){
+        const meta = document.querySelector('meta[name="paypal-client-id"]');
+        const clientId = meta ? meta.content.trim() : '';
 
-    // asegurarse de que el contenedor exista
-    const container = document.querySelector(containerSelector);
-    if (!container) {
-      console.warn('Contenedor PayPal no encontrado:', containerSelector);
-      return;
-    }
+        if (!clientId){
+          console.warn('PayPal client-id no configurado; ocultando PayPal.');
+          hidePayPalContainer(containerSelector);
+          showPayPalErrorNotice('PayPal no está configurado. Contacta al administrador.');
+          return;
+        }
 
-    // limpiar contenedor previo
-    container.innerHTML = '';
+        const sdkBase = 'https://www.paypal.com/sdk/js';
+        const sdkUrl = `${sdkBase}?client-id=${encodeURIComponent(clientId)}&currency=USD`;
 
-    paypal.Buttons({
-      createOrder: function(data, actions) {
-        return fetch(API + '/api/paypal/create-order', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ planId: '1_MES' })
-        }).then(res => res.json()).then(data => {
-          if (!data || !data.id) throw new Error('No order id from server');
-          return data.id;
-        }).catch(err => {
-          console.error('Error creando orden en backend', err);
-          alert('No se pudo crear la orden. Intenta de nuevo más tarde.');
-          throw err;
-        });
-      },
-      onApprove: function(data, actions) {
-        return fetch(API + '/api/paypal/capture-order', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId || null, planId: '1_MES' })
-        }).then(res => res.json()).then(resp => {
-          if (resp && resp.success) {
-            alert('Pago recibido. Licencia activada.');
-          } else {
-            alert('Error en la activación del pago: ' + (resp && resp.error ? resp.error : 'unknown'));
+        const already = Array.from(document.scripts).some(s => s.src && s.src.startsWith(sdkBase));
+        if (already) { waitForPaypalThenRender(containerSelector); return; }
+
+        const s = document.createElement('script');
+        s.src = sdkUrl;
+        s.async = true;
+        s.onload = () => { console.log('PayPal SDK cargado OK'); waitForPaypalThenRender(containerSelector); };
+        s.onerror = (e) => {
+          console.error('Error cargando PayPal SDK', e);
+          hidePayPalContainer(containerSelector);
+          showPayPalErrorNotice('No se pudo cargar PayPal. Desactiva bloqueadores o prueba otro navegador.');
+        };
+        document.head.appendChild(s);
+
+        setTimeout(() => {
+          if (typeof paypal === 'undefined') {
+            console.warn('PayPal SDK no disponible tras timeout');
+            hidePayPalContainer(containerSelector);
           }
-        }).catch(err => {
-          console.error('Error capturando orden', err);
-          alert('Error en la captura del pago.');
-        });
-      },
-      onError: function(err) {
-        console.error('PayPal Buttons error', err);
-        alert('Error con PayPal. Intenta en otra ventana sin bloqueadores.');
+        }, 8000);
       }
-    }).render(containerSelector);
-  }
 
-  function hidePayPalContainer(containerSelector) {
-    const c = document.querySelector(containerSelector);
-    if (c) c.style.display = 'none';
-  }
-  function showPayPalErrorNotice(msg) {
-    // muestra un aviso discreto para el usuario (puedes adaptar el estilo)
-    const notice = document.createElement('div');
-    notice.style.cssText = 'background:#ffecec;color:#8b0000;padding:10px;border-radius:6px;margin:10px 0;font-size:13px;';
-    notice.innerText = msg;
-    const parent = document.querySelector('#paypal-area') || document.body;
-    parent.insertBefore(notice, parent.firstChild);
-  }
-</script>
+      function waitForPaypalThenRender(containerSelector){
+        const maxWait = 8000, interval = 200;
+        let waited = 0;
+        const t = setInterval(() => {
+          if (typeof paypal !== 'undefined'){
+            clearInterval(t);
+            try { renderPayPalButtons(containerSelector); } catch (e){ console.error(e); hidePayPalContainer(containerSelector); }
+          } else {
+            waited += interval;
+            if (waited >= maxWait) { clearInterval(t); hidePayPalContainer(containerSelector); }
+          }
+        }, interval);
+      }
+
+      function renderPayPalButtons(containerSelector){
+        if (typeof paypal === 'undefined') throw new Error('paypal SDK no disponible');
+        const container = document.querySelector(containerSelector);
+        if (!container) return;
+        container.innerHTML = '';
+        paypal.Buttons({
+          createOrder: function(){
+            return fetch(API + '/api/paypal/create-order', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ planId: '1_MES' })
+            }).then(r => r.json()).then(data => {
+              if (!data || !data.id) throw new Error('No order id from server');
+              return data.id;
+            }).catch(err => {
+              console.error('Error creando orden en backend', err);
+              alert('No se pudo crear la orden. Intenta de nuevo más tarde.');
+              throw err;
+            });
+          },
+          onApprove: function(data){
+            return fetch(API + '/api/paypal/capture-order', {
+              method: 'POST',
+              headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId || null, planId: '1_MES' })
+            }).then(r => r.json()).then(resp => {
+              if (resp && resp.success) {
+                alert('Pago recibido. Licencia activada.');
+              } else {
+                alert('Error en la activación del pago: ' + (resp.error || ''));
+              }
+            }).catch(err => {
+              console.error('Error capturando orden', err);
+              alert('Error en la captura del pago.');
+            });
+          },
+          onError: function(err){
+            console.error('PayPal Buttons error', err);
+            alert('Error con PayPal. Intenta en otra ventana sin bloqueadores.');
+          }
+        }).render(containerSelector);
+      }
+
+      // Exponer inicializador para ejecución tras DOMContentLoaded
+      window.__Grepo_initPayments = function(){
+        loadPayPalSdkAndRenderButtons('#paypal-button-container');
+      };
+
+      document.addEventListener('DOMContentLoaded', function(){
+        // ligar botón de instalación si existe
+        const installBtn = document.querySelector('#install-button');
+        if (installBtn) installBtn.addEventListener('click', window.descargarArchivo);
+        // iniciar PayPal loader (no bloqueará la UI si falla)
+        window.__Grepo_initPayments();
+      });
+    })();
+  </script>
+</head>
+<body>
+  <nav>
+    <div class="logo">GrepoBot Pro</div>
+    <div>
+      <button id="login-open" class="btn">Iniciar sesión</button>
+      <button id="install-button" class="btn">INSTALAR</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <section class="card hero">
+      <h1>GrepoBot Pro — Automatización</h1>
+      <p class="muted">Registro, descarga y pago integrados.</p>
+      <div id="paypal-area" class="card">
+        <div id="paypal-button-container"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Registro / Login (demo)</h2>
+      <div>
+        <input id="username" placeholder="usuario" />
+        <input id="password" type="password" placeholder="contraseña" />
+        <button id="btn-login" class="btn">Entrar</button>
+        <button id="btn-register" class="btn">Crear cuenta</button>
+      </div>
+      <div id="login-msg" class="muted"></div>
+    </section>
+  </main>
+
+  <script>
+    // Código mínimo de frontend para registro/login (usa tus endpoints)
+    (function(){
+      const API = location.origin;
+      const $ = id => document.getElementById(id);
+
+      async function doRegister(username, password){
+        try {
+          const res = await fetch(API + '/api/registro', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ username, password })
+          });
+          const j = await res.json();
+          if (j.success) {
+            window.handleLoginResponse(j);
+            $('login-msg').innerText = 'Registrado! ID: ' + j.usuarioId;
+          } else {
+            $('login-msg').innerText = 'Error: ' + (j.error || 'registro fallido');
+          }
+        } catch(e){
+          $('login-msg').innerText = 'Error de conexión';
+        }
+      }
+
+      async function doLogin(username, password){
+        try {
+          const res = await fetch(API + '/api/login', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ username, password })
+          });
+          const j = await res.json();
+          if (j.success) {
+            window.handleLoginResponse(j);
+            $('login-msg').innerText = 'Login OK — ID: ' + j.usuarioId;
+          } else {
+            $('login-msg').innerText = 'Error: ' + (j.error || 'no autenticado');
+          }
+        } catch(e){
+          $('login-msg').innerText = 'Error de conexión';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', function(){
+        $('btn-register').addEventListener('click', ()=> {
+          doRegister($('username').value, $('password').value);
+        });
+        $('btn-login').addEventListener('click', ()=> {
+          doLogin($('username').value, $('password').value);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
