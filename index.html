@@ -3,356 +3,136 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GrepoBot Pro - Automatización de Élite</title>
-
-  <!-- PAYPAL: sandbox client-id (frontend-only; NO incluir secret) -->
-  <meta name="paypal-client-id" content="AdyTzXlIYrlebiqUrzbNoW1SwBPibQEMEF1NC_XX9u-nXyldB_ZslkgcOoeGshlmourfrjxST7Omg3TT">
-
-  <!-- Favicons / meta adicionales -->
-  <link rel="icon" href="/favicon.ico" />
-
-  <!-- Estilos básicos (mantener/ajustar a tu CSS real) -->
+  <title>GrepoBot Web - Panel</title>
   <style>
-    :root {
-      --primary: #4caf50;
-      --dark: #121212;
-      --card: #1e1e1e;
-      --text: #e0e0e0;
-      --muted: #a0a0a0;
-    }
-    html,body{height:100%;margin:0;background:var(--dark);color:var(--text);font-family:Inter,Segoe UI,Roboto,Arial;}
-    nav{display:flex;justify-content:space-between;align-items:center;padding:16px 28px;background:rgba(0,0,0,0.75);border-bottom:1px solid #222}
-    .logo{font-weight:700;color:var(--primary);letter-spacing:1px}
-    .nav-actions button{margin-left:8px;padding:8px 12px;border-radius:6px;border:0;background:transparent;color:var(--text);cursor:pointer}
-    .btn-primary{background:var(--primary);color:#fff;padding:10px 14px;border-radius:6px;border:0;cursor:pointer}
-    .container{max-width:1100px;margin:28px auto;padding:0 20px}
-    .hero{display:flex;gap:28px;align-items:center;padding:36px;background:linear-gradient(180deg,#161616,#0f0f0f);border-radius:10px}
-    .hero .left{flex:1}
-    .hero h1{font-size:34px;margin:0}
-    .hero p{color:var(--muted);margin-top:8px}
-    .card{background:var(--card);padding:18px;border-radius:8px;margin-top:18px}
-    .grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
-    .muted{color:var(--muted);font-size:14px}
-    img.responsive{max-width:100%;height:auto;border-radius:8px}
-    footer{padding:24px;text-align:center;color:var(--muted)}
-    .paypal-error-notice{background:#fff4f4;color:#8b0000;padding:10px;border-radius:6px;margin:10px 0;font-size:13px}
-    .plan-card{background:#171717;padding:14px;border-radius:8px;flex:0 0 220px;cursor:pointer;border:2px solid transparent}
-    .plan-card.selected{border-color:var(--primary)}
-    .plan-card:hover{transform:translateY(-4px);transition:0.15s;box-shadow:0 6px 18px rgba(0,0,0,0.35)}
-    .cta-button{padding:12px;border-radius:8px;border:0;cursor:pointer}
+    body { font-family: Arial, Helvetica, sans-serif; background:#111827; color:#e5e7eb; margin:0; padding:20px; }
+    .container { max-width:1000px; margin:0 auto; }
+    header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+    h1 { margin:0; font-size:20px; color:#7dd3fc; }
+    .card { background:#0b1220; border:1px solid #1f2937; padding:16px; border-radius:8px; margin-bottom:12px; }
+    button.primary { background:#10b981; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
+    button.ghost { background:transparent; color:#cbd5e1; border:1px solid #334155; padding:8px 12px; border-radius:6px; cursor:pointer; }
+    .gallery img { border-radius:6px; border:1px solid #2b3440; }
+    .small { font-size:13px; color:#9ca3af; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .endpoint { font-family:monospace; background:#081026; padding:6px 8px; border-radius:6px; border:1px solid #122033; color:#93c5fd; }
+    label { display:block; margin-bottom:6px; color:#cbd5e1; }
+    input[type="text"]{ padding:8px;border-radius:6px;border:1px solid #253341;background:#07111a;color:#e6eef8; width:260px;}
   </style>
-
-  <!-- Loader tolerante de PayPal y helpers (NO tocar el resto del HTML) -->
-  <script>
-  (function(){
-    // BASE API: usar el mismo origen donde está desplegada la web
-    const API = location.origin + '/api';
-
-    // estado global
-    let currentUserId = Number(localStorage.getItem('currentUserId')) || null;
-    let selectedPlan = '1_MES';
-
-    // Permitir que el flujo de login/registro llame a esta función
-    window.handleLoginResponse = function(respJson){
-      if (respJson && respJson.success && respJson.usuarioId){
-        currentUserId = respJson.usuarioId;
-        localStorage.setItem('currentUserId', String(currentUserId));
-      }
-    };
-
-    // Descargar userscript vía API por usuarioId (botón INSTALAR)
-    window.descargarArchivo = function(){
-      if (!currentUserId) {
-        alert('Debes iniciar sesión antes de descargar.');
-        return;
-      }
-      window.location.href = `${API}/descargar/${currentUserId}/GrepoBot.user.js`;
-    };
-
-    function showPayPalErrorNotice(msg){
-      if (document.querySelector('.paypal-error-notice')) return;
-      const n = document.createElement('div');
-      n.className = 'paypal-error-notice';
-      n.style.cssText = 'background:#fff4f4;color:#8b0000;padding:10px;border-radius:6px;margin:10px 0;font-size:13px';
-      n.innerText = msg;
-      const parent = document.querySelector('#paypal-area') || document.body;
-      parent.insertBefore(n, parent.firstChild);
-    }
-    function hidePayPalContainer(sel){
-      const c = document.querySelector(sel);
-      if (c) c.style.display = 'none';
-    }
-
-    // Cargar SDK PayPal dinámicamente (si hay client-id)
-    function loadPayPalSdkAndRenderButtons(containerSelector){
-      const meta = document.querySelector('meta[name="paypal-client-id"]');
-      const clientId = meta ? meta.content.trim() : '';
-      if (!clientId) {
-        console.warn('PayPal client-id no configurado; ocultando PayPal.');
-        hidePayPalContainer(containerSelector);
-        showPayPalErrorNotice('PayPal no está configurado. Contacta al administrador.');
-        return;
-      }
-
-      const sdkBase = 'https://www.paypal.com/sdk/js';
-      const sdkUrl = `${sdkBase}?client-id=${encodeURIComponent(clientId)}&currency=USD`;
-
-      // Evitar cargar dos veces
-      const already = Array.from(document.scripts).some(s => s.src && s.src.startsWith(sdkBase));
-      if (already) { waitForPaypalThenRender(containerSelector); return; }
-
-      const s = document.createElement('script');
-      s.src = sdkUrl;
-      s.async = true;
-      s.onload = () => { console.log('PayPal SDK cargado OK'); waitForPaypalThenRender(containerSelector); };
-      s.onerror = (e) => { console.error('Error cargando PayPal SDK', e); hidePayPalContainer(containerSelector); showPayPalErrorNotice('No se pudo cargar PayPal. Desactiva bloqueadores o prueba otro navegador.'); };
-      document.head.appendChild(s);
-
-      setTimeout(()=>{ if (typeof paypal === 'undefined') { console.warn('PayPal SDK no disponible tras timeout'); hidePayPalContainer(containerSelector); } }, 8000);
-    }
-
-    function waitForPaypalThenRender(containerSelector){
-      const maxWait = 8000, interval = 200;
-      let waited = 0;
-      const t = setInterval(()=>{
-        if (typeof paypal !== 'undefined'){
-          clearInterval(t);
-          try { renderPayPalButtons(containerSelector); } catch(e){ console.error(e); hidePayPalContainer(containerSelector); }
-        } else {
-          waited += interval;
-          if (waited >= maxWait) { clearInterval(t); hidePayPalContainer(containerSelector); }
-        }
-      }, interval);
-    }
-
-    // Crea la orden en backend para el plan seleccionado
-    window.__Grepo_createOrderForSelectedPlan = async function(){
-      try {
-        const res = await fetch(API + '/paypal/create-order', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ planId: selectedPlan })
-        });
-        const j = await res.json();
-        if (!j || !j.id) throw new Error('No order id');
-        return j.id;
-      } catch (e) {
-        console.error('Error creando orden', e);
-        throw e;
-      }
-    };
-
-    function renderPayPalButtons(containerSelector){
-      if (typeof paypal === 'undefined') throw new Error('paypal SDK no disponible');
-      const container = document.querySelector(containerSelector);
-      if (!container) return;
-      container.innerHTML = '';
-      paypal.Buttons({
-        createOrder: function(){ return window.__Grepo_createOrderForSelectedPlan(); },
-        onApprove: function(data){
-          return fetch(API + '/paypal/capture-order', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId || null, planId: selectedPlan })
-          }).then(r => r.json()).then(resp => {
-            if (resp && resp.success) alert('Pago recibido. Licencia activada.');
-            else alert('Error en la activación del pago: ' + (resp.error || ''));
-          }).catch(err => { console.error('Error capturando orden', err); alert('Error en la captura del pago.'); });
-        },
-        onError: function(err){ console.error('PayPal Buttons error', err); alert('Error con PayPal. Intenta en otra ventana sin bloqueadores.'); }
-      }).render(containerSelector);
-    }
-
-    // Inicializador público
-    window.__Grepo_setSelectedPlan = function(planId){ selectedPlan = planId; if (typeof paypal !== 'undefined') { try{ renderPayPalButtons('#paypal-button-container'); }catch(e){console.warn(e);} } };
-    window.__Grepo_initPayments = function(){ loadPayPalSdkAndRenderButtons('#paypal-button-container'); };
-
-    document.addEventListener('DOMContentLoaded', function(){
-      // enlazar botón de descarga si existe
-      const topInstall = document.querySelector('#install-button');
-      if (topInstall) topInstall.addEventListener('click', () => window.descargarArchivo());
-      const sideInstall = document.querySelector('#btn-descargar');
-      if (sideInstall) sideInstall.addEventListener('click', () => window.descargarArchivo());
-
-      // inicializar PayPal (no bloqueante)
-      window.__Grepo_initPayments();
-    });
-  })();
-  </script>
 </head>
 <body>
-  <nav>
-    <div class="logo">GrepoBot Pro</div>
-    <div class="nav-actions">
-      <button id="btn-open-support" class="nav-btn">Soporte IA</button>
-      <button id="login-open" class="nav-btn">Entrar</button>
-      <button id="install-button" class="btn-primary">INSTALAR</button>
+  <div class="container">
+    <header>
+      <h1>GrepoBot Web — Panel de pruebas</h1>
+    </header>
+
+    <div class="card">
+      <p class="small">Usa este panel para pruebas rápidas: registro/login en el backend, probar soporte y simular la compra si el botón PayPal falla.</p>
+
+      <div style="margin-top:8px;">
+        <label>Probar endpoint soporte (GET):</label>
+        <div class="row">
+          <input id="support-q" type="text" placeholder="Escribe una pregunta (ej: hola)" value="hola">
+          <button id="btn-support" class="ghost">Probar /api/support</button>
+          <span id="support-res" class="small"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Probar create-order (GET):</label>
+        <div class="row">
+          <button id="btn-create-order" class="ghost">GET /api/paypal/create-order</button>
+          <span id="create-res" class="small"></span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Compra simulada (activar licencia en backend)</label>
+        <div class="row">
+          <button id="btn-buy-sim" class="primary">Comprar (simulado)</button>
+          <span class="small">Pulsar pedirá tu usuarioId (nº).</span>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;">
+        <label>Pruebas rápidas (endpoints):</label>
+        <div class="small">
+          - Registro (POST): <span class="endpoint">/api/registro</span><br>
+          - Login (POST): <span class="endpoint">/api/login</span><br>
+          - Comprobar licencia (GET): <span class="endpoint">/api/check-license?token=TU_TOKEN</span><br>
+          - Descargar script (ejemplo): <span class="endpoint">/api/descargar?usuarioId=ID&amp;variant=tampermonkey-trial&amp;token=TU_TOKEN</span>
+        </div>
+      </div>
     </div>
-  </nav>
 
-  <main class="container">
-    <!-- HERO -->
-    <section class="hero">
-      <div class="left">
-        <h1>GrepoBot Pro — Automatización de Élite</h1>
-        <p class="muted">El bot más avanzado para Grepolis. Indetectable y con Soporte IA incluido.</p>
-        <div style="margin-top:16px">
-          <button id="cta-register" class="btn-primary">Crear cuenta</button>
-          <button id="cta-login" class="btn-primary" style="background:#2d2d2d;margin-left:8px">Iniciar sesión</button>
-        </div>
+    <div class="card">
+      <h3 style="margin-top:0">Capturas</h3>
+      <div class="gallery" style="display:flex;gap:12px;flex-wrap:wrap;">
+        <img src="/assets/screenshot1.png" alt="screenshot1" style="max-width:48%;height:auto;">
+        <img src="/assets/screenshot2.png" alt="screenshot2" style="max-width:48%;height:auto;">
       </div>
-      <div class="right" style="width:320px;text-align:center">
-        <img src="/assets/hero.png" alt="GrepoBot" class="responsive"/>
-      </div>
-    </section>
-
-    <div class="grid" style="margin-top:20px">
-      <div>
-        <section class="card" id="guide-section">
-          <h2>Manual de uso</h2>
-          <p class="muted">Sigue estos pasos para registrar tu cuenta, pagar y descargar el userscript:</p>
-          <ol>
-            <li>Regístrate o inicia sesión en la web.</li>
-            <li>Elige un plan y pulsa PayPal para pagar.</li>
-            <li>Pulsa INSTALAR para descargar el userscript e instálalo en Tampermonkey.</li>
-          </ol>
-        </section>
-
-        <section class="card" id="support-ai">
-          <h2>Soporte IA</h2>
-          <p class="muted">Escribe tu duda y nuestra IA te dará pasos rápidos y comandos.</p>
-          <textarea id="ai-question" style="width:100%;height:80px;background:#0f0f0f;color:var(--text);border-radius:6px;border:1px solid #222;padding:8px"></textarea>
-          <div style="margin-top:8px"><button id="ai-send" class="btn-primary">Preguntar a la IA</button></div>
-          <div id="ai-response" class="muted" style="margin-top:12px"></div>
-        </section>
-
-        <section class="card" id="images">
-          <h2>Recursos</h2>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <img src="/assets/screenshot1.png" alt="s1" style="width:160px;border-radius:6px"/>
-            <img src="/assets/screenshot2.png" alt="s2" style="width:160px;border-radius:6px"/>
-            <img src="/assets/screenshot3.png" alt="s3" style="width:160px;border-radius:6px"/>
-          </div>
-        </section>
-      </div>
-
-      <aside>
-        <!-- Login / Portal -->
-        <div class="card">
-          <h3>Registro / Login</h3>
-          <input id="username" placeholder="usuario" style="width:100%;margin-bottom:8px;padding:8px;background:#0f0f0f;border:1px solid #222;color:var(--text);border-radius:6px"/>
-          <input id="password" type="password" placeholder="contraseña" style="width:100%;margin-bottom:8px;padding:8px;background:#0f0f0f;border:1px solid #222;color:var(--text);border-radius:6px"/>
-          <div style="display:flex;gap:8px">
-            <button id="btn-register" class="btn-primary" style="flex:1">Crear cuenta</button>
-            <button id="btn-login" class="btn-primary" style="flex:1;background:#2d2d2d">Entrar</button>
-          </div>
-          <div id="login-msg" class="muted" style="margin-top:10px"></div>
-        </div>
-
-        <!-- Planes / PayPal -->
-        <div class="card" id="portal">
-          <h3>Pago / Licencia</h3>
-
-          <!-- Selector de planes -->
-          <div id="planos" style="margin-bottom:12px">
-            <h4>Elige tu plan</h4>
-            <div id="plan-list" style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap"></div>
-          </div>
-
-          <!-- Contenedor PayPal -->
-          <div id="paypal-area">
-            <div id="paypal-button-container"></div>
-          </div>
-
-          <div class="muted" style="margin-top:10px">Aceptamos PayPal. Si el botón no aparece, desactiva bloqueadores o prueba en incógnito.</div>
-        </div>
-
-        <!-- Instalar -->
-        <div class="card">
-          <h3>Instalar</h3>
-          <p class="muted">Pulsa para descargar el userscript e instalarlo en Tampermonkey.</p>
-          <button id="btn-descargar" class="cta-button" style="width:100%; background:#2196F3; color:#fff;" onclick="descargarArchivo()">📥 INSTALAR BOT</button>
-        </div>
-      </aside>
+      <p class="small" style="margin-top:8px">Si las imágenes no aparecen, súbelas a la carpeta <strong>assets/</strong> con los nombres <code>screenshot1.png</code> y <code>screenshot2.png</code>.</p>
     </div>
-  </main>
 
-  <footer>
-    &copy; GrepoTeam — Documentación, soporte y actualizaciones automáticas.
-  </footer>
+    <footer style="margin-top:18px; text-align:center;" class="small">
+      GrepoBot — Panel de pruebas. No se guardan claves en el repositorio.
+    </footer>
+  </div>
 
-  <!-- Scripts funcionales -->
   <script>
-  (function(){
-    // Configuración de planes
-    const PLANS = {
-      '1_MES': { title: '1 Mes', price: '$7.99', desc: 'Acceso por 1 mes' },
-      '6_MES': { title: '6 Meses', price: '$45.00', desc: 'Ahorra 10%' },
-      '1_ANIO': { title: '1 Año', price: '$80.00', desc: 'Ahorra 20%' }
-    };
-    let selected = '1_MES';
-
-    function renderPlanCards(){
-      const container = document.getElementById('plan-list');
-      container.innerHTML = '';
-      Object.keys(PLANS).forEach(id=>{
-        const p = PLANS[id];
-        const card = document.createElement('div');
-        card.className = 'plan-card' + (id===selected ? ' selected' : '');
-        card.innerHTML = `<div style="font-weight:700;margin-bottom:6px">${p.title}</div>
-                          <div style="font-size:18px;margin-bottom:8px">${p.price}</div>
-                          <div class="muted" style="font-size:13px">${p.desc}</div>`;
-        card.addEventListener('click', ()=> {
-          selected = id;
-          document.querySelectorAll('.plan-card').forEach(c=>c.classList.remove('selected'));
-          card.classList.add('selected');
-          // notificar al loader de paypal
-          try { window.__Grepo_setSelectedPlan && window.__Grepo_setSelectedPlan(selected); } catch(e){ console.warn(e); }
-        });
-        container.appendChild(card);
-      });
-    }
-
-    // Login / registro (simple, usa API real si existe)
-    async function doRegister(username, password){
+    // Soporte GET
+    document.getElementById('btn-support').addEventListener('click', async () => {
+      const q = document.getElementById('support-q').value || 'hola';
+      const el = document.getElementById('support-res');
+      el.textContent = '...';
       try {
-        const res = await fetch(location.origin + '/api/registro', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username, password })
-        });
+        const res = await fetch('/api/support?question=' + encodeURIComponent(q));
         const j = await res.json();
-        if (j.success){ window.handleLoginResponse(j); document.getElementById('login-msg').innerText = 'Registrado! ID: ' + j.usuarioId; }
-        else document.getElementById('login-msg').innerText = 'Error: ' + (j.error||'registro fallido');
-      } catch(e){ document.getElementById('login-msg').innerText = 'Error de conexión'; }
-    }
-    async function doLogin(username,password){
-      try {
-        const res = await fetch(location.origin + '/api/login', {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ username, password })
-        });
-        const j = await res.json();
-        if (j.success){ window.handleLoginResponse(j); document.getElementById('login-msg').innerText = 'Login OK — ID: ' + j.usuarioId; }
-        else document.getElementById('login-msg').innerText = 'Error: ' + (j.error||'no autenticado');
-      } catch(e){ document.getElementById('login-msg').innerText = 'Error de conexión'; }
-    }
-
-    document.addEventListener('DOMContentLoaded', function(){
-      renderPlanCards();
-
-      document.getElementById('btn-register').addEventListener('click', ()=> doRegister(document.getElementById('username').value, document.getElementById('password').value));
-      document.getElementById('btn-login').addEventListener('click', ()=> doLogin(document.getElementById('username').value, document.getElementById('password').value));
-
-      // conectar botones de instalacion (por si no hay onclick inline)
-      const topInstall = document.querySelector('#install-button');
-      if (topInstall) topInstall.addEventListener('click', () => window.descargarArchivo());
-      const sideInstall = document.querySelector('#btn-descargar');
-      if (sideInstall) sideInstall.addEventListener('click', () => window.descargarArchivo());
-
-      // inicializar pagos (loader se encargará de mostrar/ocultar)
-      try { window.__Grepo_initPayments && window.__Grepo_initPayments(); } catch(e){ console.warn(e); }
+        el.textContent = JSON.stringify(j).slice(0, 200);
+      } catch (e) {
+        el.textContent = 'Error: ' + (e.message || e);
+        console.error(e);
+      }
     });
-  })();
+
+    // create-order GET
+    document.getElementById('btn-create-order').addEventListener('click', async () => {
+      const el = document.getElementById('create-res');
+      el.textContent = '...';
+      try {
+        const res = await fetch('/api/paypal/create-order');
+        const j = await res.json();
+        el.textContent = JSON.stringify(j);
+      } catch (e) {
+        el.textContent = 'Error: ' + (e.message || e);
+        console.error(e);
+      }
+    });
+
+    // Comprar simulado (POST capture-order)
+    document.getElementById('btn-buy-sim').addEventListener('click', async () => {
+      let usuarioId = window.USER_ID || prompt('Introduce tu usuarioId (el número que te dio /api/registro):');
+      if (!usuarioId) { alert('UsuarioId requerido'); return; }
+      const planId = '1_MES';
+      try {
+        const res = await fetch('/api/paypal/capture-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ usuarioId, planId })
+        });
+        const j = await res.json();
+        if (j.success) {
+          alert('Pago simulado OK. Licencia activada.');
+          location.reload();
+        } else {
+          alert('Error: ' + (j.error || JSON.stringify(j)));
+          console.error(j);
+        }
+      } catch (e) {
+        alert('Error al realizar la compra simulada. Revisa la consola.');
+        console.error(e);
+      }
+    });
   </script>
 </body>
 </html>
