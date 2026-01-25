@@ -3,136 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GrepoBot Web - Panel</title>
+  <title>GrepoBot — Página de pruebas / Capturas</title>
   <style>
-    body { font-family: Arial, Helvetica, sans-serif; background:#111827; color:#e5e7eb; margin:0; padding:20px; }
-    .container { max-width:1000px; margin:0 auto; }
-    header { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-    h1 { margin:0; font-size:20px; color:#7dd3fc; }
-    .card { background:#0b1220; border:1px solid #1f2937; padding:16px; border-radius:8px; margin-bottom:12px; }
-    button.primary { background:#10b981; color:#fff; border:none; padding:10px 14px; border-radius:6px; cursor:pointer; }
-    button.ghost { background:transparent; color:#cbd5e1; border:1px solid #334155; padding:8px 12px; border-radius:6px; cursor:pointer; }
-    .gallery img { border-radius:6px; border:1px solid #2b3440; }
-    .small { font-size:13px; color:#9ca3af; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .endpoint { font-family:monospace; background:#081026; padding:6px 8px; border-radius:6px; border:1px solid #122033; color:#93c5fd; }
-    label { display:block; margin-bottom:6px; color:#cbd5e1; }
-    input[type="text"]{ padding:8px;border-radius:6px;border:1px solid #253341;background:#07111a;color:#e6eef8; width:260px;}
+    :root{--bg:#0f1720;--card:#111827;--muted:#9ca3af;--accent:#10b981}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(180deg,#071021 0%, #0f1720 100%);color:#e6eef6}
+    .wrap{max-width:1100px;margin:36px auto;padding:24px}
+    header{display:flex;align-items:center;gap:18px}
+    header h1{margin:0;font-size:28px;color:var(--accent)}
+    .grid{display:grid;grid-template-columns:1fr 380px;gap:24px;margin-top:20px}
+    .card{background:rgba(255,255,255,0.03);border-radius:8px;padding:18px;box-shadow:0 6px 20px rgba(2,6,23,0.6)}
+    .card h2{margin:0 0 8px;font-size:18px;color:#fff}
+    .muted{color:var(--muted);font-size:14px;margin-bottom:12px}
+    .screens{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    .screens img{width:100%;height:auto;border-radius:6px;display:block;box-shadow:0 6px 18px rgba(2,6,23,0.6);cursor:zoom-in}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .btn{background:var(--accent);color:#042018;padding:8px 12px;border-radius:6px;text-decoration:none;font-weight:600}
+    .small{font-size:13px;color:var(--muted);margin-top:10px}
+    footer{margin-top:28px;color:var(--muted);font-size:13px}
+    @media (max-width:940px){.grid{grid-template-columns:1fr}.screens{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrap">
     <header>
-      <h1>GrepoBot Web — Panel de pruebas</h1>
+      <h1>GrepoBot — Panel de pruebas (Capturas)</h1>
+      <div class="muted">Prueba rápido: muestra las capturas que subiste.</div>
     </header>
 
-    <div class="card">
-      <p class="small">Usa este panel para pruebas rápidas: registro/login en el backend, probar soporte y simular la compra si el botón PayPal falla.</p>
+    <div class="grid">
+      <!-- Izquierda: contenido y capturas -->
+      <main class="card">
+        <h2>Capturas de pantalla</h2>
+        <div class="muted">Si no ves las imágenes, súbelas a la carpeta <code>assets/</code> con los nombres <strong>screenshot1.png</strong> y <strong>screenshot2.png</strong>.</div>
 
-      <div style="margin-top:8px;">
-        <label>Probar endpoint soporte (GET):</label>
-        <div class="row">
-          <input id="support-q" type="text" placeholder="Escribe una pregunta (ej: hola)" value="hola">
-          <button id="btn-support" class="ghost">Probar /api/support</button>
-          <span id="support-res" class="small"></span>
+        <div class="screens" id="gallery">
+          <!-- Estas rutas asumen assets/screenshot1.png y assets/screenshot2.png en el repo -->
+          <a href="assets/screenshot1.png" target="_blank"><img src="assets/screenshot1.png" alt="Screenshot 1"></a>
+          <a href="assets/screenshot2.png" target="_blank"><img src="assets/screenshot2.png" alt="Screenshot 2"></a>
         </div>
-      </div>
 
-      <div style="margin-top:12px;">
-        <label>Probar create-order (GET):</label>
-        <div class="row">
-          <button id="btn-create-order" class="ghost">GET /api/paypal/create-order</button>
-          <span id="create-res" class="small"></span>
-        </div>
-      </div>
-
-      <div style="margin-top:12px;">
-        <label>Compra simulada (activar licencia en backend)</label>
-        <div class="row">
-          <button id="btn-buy-sim" class="primary">Comprar (simulado)</button>
-          <span class="small">Pulsar pedirá tu usuarioId (nº).</span>
-        </div>
-      </div>
-
-      <div style="margin-top:12px;">
-        <label>Pruebas rápidas (endpoints):</label>
         <div class="small">
-          - Registro (POST): <span class="endpoint">/api/registro</span><br>
-          - Login (POST): <span class="endpoint">/api/login</span><br>
-          - Comprobar licencia (GET): <span class="endpoint">/api/check-license?token=TU_TOKEN</span><br>
-          - Descargar script (ejemplo): <span class="endpoint">/api/descargar?usuarioId=ID&amp;variant=tampermonkey-trial&amp;token=TU_TOKEN</span>
+          - Haz clic en cualquiera de las imágenes para abrirla en tamaño completo.<br>
+          - URL de la demo: /demo.html (o el nombre/ubicación donde subas este archivo).
         </div>
-      </div>
+      </main>
+
+      <!-- Derecha: acciones rápidas -->
+      <aside class="card">
+        <h2>Acciones rápidas</h2>
+        <div class="muted">Usa los botones según prefieras:</div>
+        <div class="btns">
+          <a class="btn" href="/api/registro" onclick="alert('Usa el formulario de registro en la UI o POST /api/registro');return false">Registro (POST)</a>
+          <a class="btn" href="/api/login" onclick="alert('Usa el formulario de login en la UI o POST /api/login');return false">Login (POST)</a>
+        </div>
+
+        <div style="margin-top:14px">
+          <a class="btn" href="/api/descargar?usuarioId=1&variant=tampermonkey-full&token=TU_TOKEN">Descargar userscript (directo)</a>
+        </div>
+
+        <div class="small" style="margin-top:12px">
+          Reemplaza <code>TU_TOKEN</code> por tu token real si quieres probar la descarga desde aquí.
+        </div>
+      </aside>
     </div>
 
-    <div class="card">
-      <h3 style="margin-top:0">Capturas</h3>
-      <div class="gallery" style="display:flex;gap:12px;flex-wrap:wrap;">
-        <img src="/assets/screenshot1.png" alt="screenshot1" style="max-width:48%;height:auto;">
-        <img src="/assets/screenshot2.png" alt="screenshot2" style="max-width:48%;height:auto;">
-      </div>
-      <p class="small" style="margin-top:8px">Si las imágenes no aparecen, súbelas a la carpeta <strong>assets/</strong> con los nombres <code>screenshot1.png</code> y <code>screenshot2.png</code>.</p>
-    </div>
-
-    <footer style="margin-top:18px; text-align:center;" class="small">
-      GrepoBot — Panel de pruebas. No se guardan claves en el repositorio.
+    <footer>
+      Nota: para que las imágenes se muestren correctamente, súbelas exactamente como <strong>assets/screenshot1.png</strong> y <strong>assets/screenshot2.png</strong> en la rama main y redeploy.
     </footer>
   </div>
-
-  <script>
-    // Soporte GET
-    document.getElementById('btn-support').addEventListener('click', async () => {
-      const q = document.getElementById('support-q').value || 'hola';
-      const el = document.getElementById('support-res');
-      el.textContent = '...';
-      try {
-        const res = await fetch('/api/support?question=' + encodeURIComponent(q));
-        const j = await res.json();
-        el.textContent = JSON.stringify(j).slice(0, 200);
-      } catch (e) {
-        el.textContent = 'Error: ' + (e.message || e);
-        console.error(e);
-      }
-    });
-
-    // create-order GET
-    document.getElementById('btn-create-order').addEventListener('click', async () => {
-      const el = document.getElementById('create-res');
-      el.textContent = '...';
-      try {
-        const res = await fetch('/api/paypal/create-order');
-        const j = await res.json();
-        el.textContent = JSON.stringify(j);
-      } catch (e) {
-        el.textContent = 'Error: ' + (e.message || e);
-        console.error(e);
-      }
-    });
-
-    // Comprar simulado (POST capture-order)
-    document.getElementById('btn-buy-sim').addEventListener('click', async () => {
-      let usuarioId = window.USER_ID || prompt('Introduce tu usuarioId (el número que te dio /api/registro):');
-      if (!usuarioId) { alert('UsuarioId requerido'); return; }
-      const planId = '1_MES';
-      try {
-        const res = await fetch('/api/paypal/capture-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ usuarioId, planId })
-        });
-        const j = await res.json();
-        if (j.success) {
-          alert('Pago simulado OK. Licencia activada.');
-          location.reload();
-        } else {
-          alert('Error: ' + (j.error || JSON.stringify(j)));
-          console.error(j);
-        }
-      } catch (e) {
-        alert('Error al realizar la compra simulada. Revisa la consola.');
-        console.error(e);
-      }
-    });
-  </script>
 </body>
 </html>
