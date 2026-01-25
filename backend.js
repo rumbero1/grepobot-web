@@ -339,9 +339,48 @@ app.get('/', (req, res) => {
   if (fs.existsSync(idx)) return res.sendFile(idx);
   return res.send('GrepoBot web server');
 });
+// --- Compatibilidad simple GET para evitar 404 si el frontend hace GET ---
+// GET /api/support?question=...
+app.get('/api/support', async (req, res) => {
+  const question = req.query.question || req.query.q;
+  if (!question) return res.status(400).json({ success: false, error: 'Falta pregunta (query ?question=...)' });
+  try {
+    // Forward a la misma ruta POST interna para reutilizar lógica
+    const resp = await fetch(`${req.protocol}://${req.get('host')}/api/support`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question })
+    });
+    const j = await resp.json();
+    return res.status(resp.status).json(j);
+  } catch (e) {
+    console.error('Support GET->POST forward error', e);
+    return res.status(500).json({ success:false, error:'Error interno en soporte' });
+  }
+});
 
+// GET /api/paypal/create-order -> devuelve id simulado
+app.get('/api/paypal/create-order', (req, res) => {
+  console.log('[compat GET] /api/paypal/create-order');
+  return res.json({ id: 'TEST_' + Date.now() });
+});
+
+// GET /api/paypal/capture-order?usuarioId=...&planId=...
+app.get('/api/paypal/capture-order', (req, res) => {
+  console.log('[compat GET] /api/paypal/capture-order', req.query);
+  const { usuarioId, planId } = req.query || {};
+  if (!usuarioId || !planId) return res.status(400).json({ success:false, error:'Faltan usuarioId o planId (query)' });
+  const diasPlan = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 };
+  const days = diasPlan[planId] || 30;
+  const newExpires = Date.now() + days * 24 * 3600 * 1000;
+  db.run('UPDATE usuarios SET purchased = 1, license_expires_at = ?, trial_used = 0 WHERE id = ?', [newExpires, usuarioId], function(err) {
+    if (err) { console.error(err); return res.json({ success:false, error:'Error DB' }); }
+    return res.json({ success:true, message:'Pago simulado completado', daysAdded: days });
+  });
+});
 app.listen(PORT, () => {
   console.log('\n✅ SERVIDOR LISTO en puerto ' + PORT);
   console.log('📂 DB PATH: ' + DB_PATH);
   console.log('🌐 URL: http://localhost:' + PORT + '\n');
+
 });
