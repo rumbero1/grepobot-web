@@ -157,22 +157,16 @@
           }).then(r => r.json()).then(resp => {
             if (resp && resp.success) alert('Pago recibido. Licencia activada.');
             else alert('Error en la activación del pago: ' + (resp.error || ''));
-          }).catch(err => {
-            console.error('Error capturando orden', err);
-            alert('Error en la captura del pago.');
-          });
+          }).catch(err => { console.error('Error capturando orden', err); alert('Error en la captura del pago.'); });
         },
-        onError: function(err){
-          console.error('PayPal Buttons error', err);
-          alert('Error con PayPal. Intenta en otra ventana sin bloqueadores.');
-        }
+        onError: function(err){ console.error('PayPal Buttons error', err); alert('Error con PayPal. Intenta en otra ventana sin bloqueadores.'); }
       }).render(containerSelector);
     }
 
     // Inicializador público
+    window.__Grepo_setSelectedPlan = function(planId){ selectedPlan = planId; if (typeof paypal !== 'undefined') { try{ renderPayPalButtons('#paypal-button-container'); }catch(e){console.warn(e);} } };
     window.__Grepo_initPayments = function(){ loadPayPalSdkAndRenderButtons('#paypal-button-container'); };
 
-    // Inicialización DOM
     document.addEventListener('DOMContentLoaded', function(){
       // enlazar botón de descarga si existe
       const topInstall = document.querySelector('#install-button');
@@ -183,15 +177,6 @@
       // inicializar PayPal (no bloqueante)
       window.__Grepo_initPayments();
     });
-
-    // Exponer utilidades para debug rápido si hace falta
-    window.__Grepo_setSelectedPlan = function(planId){
-      selectedPlan = planId;
-      // re-renderizar botones si SDK cargó
-      if (typeof paypal !== 'undefined') {
-        try { renderPayPalButtons('#paypal-button-container'); } catch(e){ console.warn(e); }
-      }
-    };
   })();
   </script>
 </head>
