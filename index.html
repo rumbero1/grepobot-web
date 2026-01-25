@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GrepoBot Pro - Automatización de Élite</title>
 
-    <!-- IMPORTANTE: reemplaza el client-id por el tuyo si lo necesitas.
-         Si ya funciona con el que hay, déjalo tal cual. -->
-    <script src="https://www.paypal.com/sdk/js?client-id=ARI8xtvx-zlykSa7RFIka_g5C3_iF8-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGs&currency=USD" async></script>
-
     <style>
         :root {
             --primary: #4caf50;
@@ -231,10 +227,15 @@
 </footer>
 
 <script>
-    // Asegúrate de que esta URL sea la correcta (puede quedar relativa '/api' si tu servidor lo sirve).
-    const API = 'https://grepobot-web.onrender.com/api';
+    // API base (no trailing slash)
+    const API_BASE = (function(){
+        // Allow override if needed
+        return (location.origin) ? location.origin : 'https://grepobot-web.onrender.com';
+    })();
+    const API = API_BASE + '/api';
 
     let currentUserId = null;
+    let currentUserToken = null;
     let selectedPlanId = '1_MES';
 
     function scrollToPortal() { document.getElementById('portal').scrollIntoView({behavior: 'smooth'}); }
@@ -246,6 +247,34 @@
         renderPayPalButtons();
     }
 
+    async function fetchConfig() {
+        try {
+            const res = await fetch(API + '/config');
+            if(!res.ok) throw new Error('No se pudo obtener configuración');
+            return await res.json();
+        } catch(e) {
+            console.error('config error', e);
+            return null;
+        }
+    }
+
+    // Load PayPal SDK dynamically using server-provided client id (safer)
+    async function loadPayPalSdk() {
+        if(window.paypal) return window.paypal; // já cargado
+        const cfg = await fetchConfig();
+        const clientId = (cfg && cfg.paypalClientId) ? cfg.paypalClientId : null;
+        const currency = (cfg && cfg.paypalMode === 'live') ? 'USD' : (cfg && cfg.currency) ? cfg.currency : 'USD';
+        const cid = clientId || 'demo';
+        return new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(cid)}&currency=${encodeURIComponent(currency)}`;
+            s.async = true;
+            s.onload = () => resolve(window.paypal);
+            s.onerror = (e) => reject(new Error('No se pudo cargar PayPal SDK'));
+            document.head.appendChild(s);
+        });
+    }
+
     async function acceder() {
         const u = document.getElementById('user').value.trim();
         const p = document.getElementById('pass').value.trim();
@@ -253,33 +282,44 @@
 
         msg.style.display = 'none';
         try {
-            if(!u || !p) { msg.textContent="Faltan datos"; msg.className='alert error'; msg.style.display='block'; return; }
+            if (!u || !p) { msg.textContent = "Faltan datos"; msg.className = 'alert error'; msg.style.display = 'block'; return; }
 
-            let res = await fetch(API + '/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-            if(!res.ok) throw new Error('Error en la conexión: ' + res.status);
+            let res = await fetch(API + '/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            if (!res.ok) throw new Error('Error en la conexión: ' + res.status);
             let data = await res.json();
 
-            if(!data.success) {
-                if(confirm("Usuario no encontrado. ¿Registrar nueva cuenta?")) {
-                    res = await fetch(API + '/registro', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u, password:p}) });
-                    if(!res.ok) throw new Error('Error en registro: ' + res.status);
+            if (!data.success) {
+                if (confirm("Usuario no encontrado. ¿Registrar nueva cuenta?")) {
+                    res = await fetch(API + '/registro', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username: u, password: p })
+                    });
+                    if (!res.ok) throw new Error('Error en registro: ' + res.status);
                     data = await res.json();
                 } else return;
             }
 
-            if(data.success) {
+            if (data.success) {
                 currentUserId = data.usuarioId || data.userId || null;
+                currentUserToken = data.token || null;
+                try { localStorage.setItem('grepobot_userId', String(currentUserId)); localStorage.setItem('grepobot_token', String(currentUserToken)); } catch(e){}
                 document.getElementById('login-form').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'block';
                 document.getElementById('user-display').textContent = data.username || u;
 
                 const statusDiv = document.getElementById('status-licencia');
-                if((data.dias || data.days) <= 0) {
+                if ((data.dias || data.days || data.daysLeft) <= 0) {
                     statusDiv.className = "alert error";
                     statusDiv.innerHTML = `⛔ <b>LICENCIA CADUCADA</b><br>Renueva abajo para continuar.`;
                 } else {
+                    const days = data.dias || data.days || data.daysLeft || 0;
                     statusDiv.className = "alert success";
-                    statusDiv.innerHTML = `✅ <b>Licencia Activa</b> (${data.dias || data.days} días restantes)`;
+                    statusDiv.innerHTML = `✅ <b>Licencia Activa</b> (${days} días restantes)`;
                 }
 
                 renderPayPalButtons();
@@ -293,12 +333,17 @@
     }
 
     function descargarArchivo() {
-        if(!currentUserId) return alert("Sesión expirada. Inicia sesión de nuevo.");
-        // ruta API: /descargar/:usuarioId/archivo
-        window.location.href = API.replace(/\/api\/?$/,'') + '/api/descargar/' + encodeURIComponent(currentUserId) + '/GrepoBot.user.js';
+        if (!currentUserId || !currentUserToken) {
+            return alert("Sesión expirada. Inicia sesión de nuevo.");
+        }
+        const variant = 'tampermonkey-full';
+        const filename = 'GrepoBot.user.js';
+        const url = API + `/descargar?usuarioId=${encodeURIComponent(currentUserId)}&variant=${encodeURIComponent(variant)}&filename=${encodeURIComponent(filename)}&token=${encodeURIComponent(currentUserToken)}`;
+        // Abrir en nueva ventana para que Tampermonkey pueda detectar descarga
+        window.open(url, '_blank');
     }
 
-    function renderPayPalButtons() {
+    async function renderPayPalButtons() {
         const container = document.getElementById('paypal-button-container');
         container.innerHTML = '';
 
@@ -307,13 +352,10 @@
             return;
         }
 
-        if(typeof paypal === 'undefined') {
-            // SDK aún no cargado: reintentar en breve
-            setTimeout(renderPayPalButtons, 200);
-            return;
-        }
-
         try {
+            await loadPayPalSdk();
+            if(typeof paypal === 'undefined') { container.innerHTML = '<div style="color:#faa">SDK de PayPal no disponible</div>'; return; }
+
             paypal.Buttons({
                 createOrder: function(data, actions) {
                     return fetch(API + '/paypal/create-order', {
@@ -326,10 +368,6 @@
                     }).then(orderData => {
                         if(!orderData || !orderData.id) throw new Error('Respuesta inválida de PayPal');
                         return orderData.id;
-                    }).catch(err => {
-                        alert('No se pudo crear la orden: ' + err.message);
-                        console.error(err);
-                        throw err;
                     });
                 },
                 onApprove: function(data, actions) {
@@ -337,87 +375,40 @@
                         method: 'post',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId, planId: selectedPlanId })
-                    }).then(res => {
-                        if(!res.ok) throw new Error('Error al capturar pago: ' + res.status);
-                        return res.json();
-                    }).then(details => {
+                    }).then(res => res.json()).then(details => {
+                        if(!details || !details.success) throw new Error(details && details.error ? details.error : 'Error captura');
                         alert('✅ ¡PAGO COMPLETADO! Licencia renovada.');
                         location.reload();
-                    }).catch(err => {
-                        alert('Error en la confirmación del pago: ' + err.message);
-                        console.error(err);
-                    });
+                    }).catch(err => { alert('Error en la confirmación del pago: ' + err.message); console.error(err); });
                 },
-                onError: function(err) {
-                    console.error('PayPal error:', err);
-                    alert('Error con PayPal: ' + (err && err.message ? err.message : 'comprueba la consola'));
-                }
-            }).render('#paypal-button-container').catch(e => {
-                console.error('Render PayPal error', e);
-            });
+                onError: function(err) { console.error('PayPal error:', err); alert('Error con PayPal: ' + (err && err.message ? err.message : 'comprueba la consola')); }
+            }).render('#paypal-button-container');
         } catch (e) {
-            console.error(e);
+            console.error('Render PayPal exception', e);
+            container.innerHTML = '<div style="color:#faa">Error al cargar PayPal: ' + (e.message || e) + '</div>';
         }
     }
 
     function toggleChat() {
         const win = document.getElementById('chatWindow');
-        if(win.style.display === 'flex') {
-            win.style.display = 'none';
-            win.setAttribute('aria-hidden','true');
-        } else {
-            win.style.display = 'flex';
-            win.style.flexDirection = 'column';
-            win.setAttribute('aria-hidden','false');
-        }
+        if(win.style.display === 'flex') { win.style.display = 'none'; win.setAttribute('aria-hidden','true'); }
+        else { win.style.display = 'flex'; win.style.flexDirection = 'column'; win.setAttribute('aria-hidden','false'); }
     }
 
     function sendMessage() {
         const input = document.getElementById('chatInput');
         const text = input.value.trim();
-        if(!text) return;
-        addMessage(escapeHtml(text), 'user');
-        input.value = '';
-        setTimeout(() => {
-            const respuesta = obtenerRespuestaIA(text.toLowerCase());
-            addMessage(respuesta, 'bot');
-        }, 500);
+        if(!text) return; addMessage(escapeHtml(text), 'user'); input.value = '';
+        setTimeout(() => { const respuesta = obtenerRespuestaIA(text.toLowerCase()); addMessage(respuesta, 'bot'); }, 500);
     }
+    function addMessage(text, type) { const body = document.getElementById('chatBody'); const div = document.createElement('div'); div.className = `msg ${type}`; if(type === 'user') div.textContent = text; else div.innerHTML = text; body.appendChild(div); body.scrollTop = body.scrollHeight; }
+    function escapeHtml(unsafe) { return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    function obtenerRespuestaIA(p) { if(p.includes('hola')) return "¡Hola! Soy la IA de GrepoBot. ¿En qué te ayudo?"; if(p.includes('pagar')||p.includes('paypal')) return "Para pagar, inicia sesión y selecciona uno de los planes (1 Mes, 6 Meses o 1 Año). El pago es automático."; if(p.includes('instalar')) return "1. Instala Tampermonkey.<br>2. Inicia sesión.<br>3. Pulsa 'INSTALAR BOT'.<br>4. Acepta en Tampermonkey."; if(p.includes('no funciona')) return "Revisa si tu licencia ha caducado (te saldrá en rojo al iniciar sesión). Si has pagado y no va, recarga la página."; if(p.includes('precio')) return "Tenemos 3 planes:<br>- 1 Mes: $7.99<br>- 6 Meses: $45<br>- 1 Año: $80"; return "No te entiendo bien. Prueba con 'pagar', 'instalar' o 'precios'."; }
 
-    function addMessage(text, type) {
-        const body = document.getElementById('chatBody');
-        const div = document.createElement('div');
-        div.className = `msg ${type}`;
-        if(type === 'user') div.textContent = text; else div.innerHTML = text;
-        body.appendChild(div);
-        body.scrollTop = body.scrollHeight;
-    }
-
-    function escapeHtml(unsafe) {
-        return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    }
-
-    function obtenerRespuestaIA(p) {
-        if(p.includes('hola')) return "¡Hola! Soy la IA de GrepoBot. ¿En qué te ayudo?";
-        if(p.includes('pagar') || p.includes('paypal')) return "Para pagar, inicia sesión y selecciona uno de los planes (1 Mes, 6 Meses o 1 Año). El pago es automático.";
-        if(p.includes('instalar')) return "1. Instala Tampermonkey.<br>2. Inicia sesión.<br>3. Pulsa 'INSTALAR BOT'.<br>4. Acepta en Tampermonkey.";
-        if(p.includes('no funciona')) return "Revisa si tu licencia ha caducado (te saldrá en rojo al iniciar sesión). Si has pagado y no va, recarga la página.";
-        if(p.includes('precio')) return "Tenemos 3 planes:<br>- 1 Mes: $7.99<br>- 6 Meses: $45<br>- 1 Año: $80";
-        return "No te entiendo bien. Prueba con 'pagar', 'instalar' o 'precios'.";
-    }
-
-    // Comprobación rápida al cargar
+    // Session restore
     document.addEventListener('DOMContentLoaded', () => {
-        // Si se desea mantener sesión entre recargas, aquí podrías recuperar userId de localStorage/session (si tu API lo soporta).
-        // Ejemplo: currentUserId = localStorage.getItem('grepobot_userId');
-        // Si el usuario ya estaba, mostrar dashboard:
-        if(currentUserId) {
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            renderPayPalButtons();
-        }
+        try { const savedId = localStorage.getItem('grepobot_userId'); const savedToken = localStorage.getItem('grepobot_token'); if (savedId && savedToken) { currentUserId = savedId; currentUserToken = savedToken; document.getElementById('login-form').style.display = 'none'; document.getElementById('dashboard').style.display = 'block'; document.getElementById('user-display').textContent = 'Usuario'; renderPayPalButtons(); } } catch(e){}
     });
 </script>
-
 </body>
 </html>
