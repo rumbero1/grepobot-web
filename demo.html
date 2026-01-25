@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GrepoBot — Capturas</title>
+  <style>body{margin:0;font-family:Arial;background:#0b0f12;color:#e6eef6}.wrap{max-width:1100px;margin:28px auto;padding:20px}h1{color:#34d399} .grid{display:flex;gap:16px;flex-wrap:wrap}.card{background:#0f1720;padding:14px;border-radius:8px;flex:1;min-width:280px}.screens{display:grid;grid-template-columns:1fr 1fr;gap:12px}.screens img{width:100%;height:auto;border-radius:6px;display:block} .btn{display:inline-block;margin-top:10px;padding:8px 12px;background:#10b981;color:#002217;border-radius:6px;text-decoration:none;font-weight:700}.note{color:#9ca3af;margin-top:12px;font-size:13px}@media(max-width:720px){.screens{grid-template-columns:1fr}}</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>GrepoBot — Panel (capturas)</h1>
+    <div class="info" style="color:#9ca3af;margin-bottom:12px">Si no ves las imágenes, súbelas en /assets/ con estos nombres: <strong>screenshot1.png</strong> y <strong>screenshot2.png</strong></div>
+    <div class="grid">
+      <div class="card">
+        <h2>Capturas</h2>
+        <div class="screens">
+          <a href="assets/screenshot1.png" target="_blank"><img src="assets/screenshot1.png" alt="screenshot1"></a>
+          <a href="assets/screenshot2.png" target="_blank"><img src="assets/screenshot2.png" alt="screenshot2"></a>
+        </div>
+        <div class="note">Haz clic en la imagen para verla a tamaño completo.</div>
+      </div>
+      <div class="card">
+        <h2>Acciones rápidas</h2>
+        <p class="note">Reemplaza <code>TU_TOKEN</code> por tu token si quieres probar la descarga directa:</p>
+        <a class="btn" href="/api/descargar?usuarioId=1&variant=tampermonkey-full&token=TU_TOKEN">Instalar userscript (directo)</a>
+        <div class="note">Registro/Login: usa la UI principal. /health para comprobar servidor.</div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:12px">URL tras subir: https://grepobot-web.onrender.com/demo.html</div>
+  </div>
+</body>
+</html>
