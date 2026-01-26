@@ -51,11 +51,30 @@ db.serialize(() => {
     purchased INTEGER DEFAULT 0,
     created_at INTEGER
   )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS logins (
+    id INTEGER PRIMARY KEY,
+    usuario_id INTEGER,
+    fecha INTEGER,
+    ip TEXT,
+    success INTEGER
+  )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS descargas (
+    id INTEGER PRIMARY KEY,
+    usuario_id INTEGER,
+    fecha INTEGER,
+    ip TEXT,
+    variant TEXT
+  )`);
 });
 
 // Helpers
 function nowMs() { return Date.now(); }
 function daysToMs(days) { return days * 24 * 60 * 60 * 1000; }
+function getIp(req) {
+    return req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
+}
 function generateToken() {
     return (typeof require('crypto').randomUUID === 'function')
         ? require('crypto').randomUUID()
@@ -125,11 +144,16 @@ app.post('/api/registro', async (req, res) => {
 // Login (POST)
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body || {};
+    const ip = getIp(req);
     if (!username || !password) return sendJson(res, { success: false, error: 'Faltan datos' });
     db.get('SELECT * FROM usuarios WHERE username = ?', [username], async (err, user) => {
         if (err) { console.error(err); return sendJson(res, { success: false, error: 'Error BD' }); }
-        if (!user) return sendJson(res, { success: false, error: 'Usuario no encontrado' });
+        if (!user) {
+            db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [0, nowMs(), ip, 0]);
+            return sendJson(res, { success: false, error: 'Usuario no encontrado' });
+        }
         const match = await bcrypt.compare(password, user.password_hash);
+        db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [user.id, nowMs(), ip, match ? 1 : 0]);
         if (!match) return sendJson(res, { success: false, error: 'Contraseña incorrecta' });
         sendJson(res, {
             success: true,
@@ -163,6 +187,7 @@ app.get('/api/descargar', async (req, res) => {
     try {
         const { usuarioId, variant, filename } = req.query;
         const token = getTokenFromReq(req);
+        const ip = getIp(req);
         if (!usuarioId || !variant) return res.status(400).json({ error: 'Faltan parametros usuarioId o variant' });
         const user = await getUserByToken(token);
         if (!user || String(user.id) !== String(usuarioId)) return res.status(403).json({ error: 'Token inválido o usuario no coincide' });
@@ -181,6 +206,9 @@ app.get('/api/descargar', async (req, res) => {
             if (!user.purchased) return res.status(403).json({ error: 'Necesitas comprar para descargar la versión completa' });
             if (leftMs <= 0) return res.status(403).json({ error: 'Licencia expirada' });
         }
+
+        // Registrar descarga
+        db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, now, ip, variant]);
 
         let scriptFile = null;
         if (isFull) scriptFile = path.join(__dirname, 'scripts', 'bot_full.user.js');
@@ -235,6 +263,65 @@ setInterval(__grepobot_check_license, 12 * 3600 * 1000);
     } catch (e) {
         console.error(e);
         return res.status(500).json({ error: 'Error interno' });
+    }
+});
+
+// Admin Stats
+app.get('/api/admin/stats', async (req, res) => {
+    try {
+        const stats = {};
+        const now = nowMs();
+        const last24h = now - daysToMs(1);
+
+        // Totales
+        stats.totalUsuarios = await new Promise(r => db.get('SELECT COUNT(*) as count FROM usuarios', (e, row) => r(row.count)));
+        stats.totalDescargas = await new Promise(r => db.get('SELECT COUNT(*) as count FROM descargas', (e, row) => r(row.count)));
+        stats.licenciasActivas = await new Promise(r => db.get('SELECT COUNT(*) as count FROM usuarios WHERE license_expires_at > ?', [now], (e, row) => r(row.count)));
+        stats.logins24h = await new Promise(r => db.get('SELECT COUNT(*) as count FROM logins WHERE fecha > ? AND success = 1', [last24h], (e, row) => r(row.count)));
+
+        // Logins recientes
+        stats.logins = await new Promise(r => db.all(`
+            SELECT l.*, u.username 
+            FROM logins l 
+            LEFT JOIN usuarios u ON l.usuario_id = u.id 
+            ORDER BY l.fecha DESC LIMIT 10
+        `, (e, rows) => r(rows || [])));
+
+        // Descargas recientes
+        stats.descargas = await new Promise(r => db.all(`
+            SELECT d.*, u.username, u.license_expires_at 
+            FROM descargas d 
+            JOIN usuarios u ON d.usuario_id = u.id 
+            ORDER BY d.fecha DESC LIMIT 10
+        `, (e, rows) => {
+            if (!rows) return r([]);
+            r(rows.map(row => ({
+                ...row,
+                fecha_descarga: row.fecha,
+                diasRestantes: Math.max(0, Math.ceil((row.license_expires_at - now) / (24 * 3600 * 1000)))
+            })));
+        }));
+
+        // Todos los usuarios
+        stats.usuarios = await new Promise(r => db.all(`
+            SELECT u.*, (SELECT COUNT(*) FROM descargas d WHERE d.usuario_id = u.id) as descargas_count 
+            FROM usuarios u 
+            ORDER BY u.created_at DESC
+        `, (e, rows) => {
+            if (!rows) return r([]);
+            r(rows.map(row => ({
+                username: row.username,
+                fecha_registro: row.created_at,
+                fecha_expiracion: row.license_expires_at,
+                diasRestantes: Math.max(0, Math.ceil((row.license_expires_at - now) / (24 * 3600 * 1000))),
+                yaDescargo: row.descargas_count > 0
+            })));
+        }));
+
+        sendJson(res, stats);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Error cargando stats' });
     }
 });
 
