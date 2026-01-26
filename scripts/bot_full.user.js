@@ -12,6 +12,44 @@
 (function () {
     'use strict';
 
+    const API_URL = 'https://grepobot-web.onrender.com/api'; // CAMBIAR POR TU URL DE RENDER
+    let LICENSE_VALID = false;
+    let DAYS_LEFT = 0;
+
+    async function checkLicense() {
+        if (typeof GREPOBOT_TOKEN === 'undefined') {
+            alert("GrepoBot: Token no encontrado. Reinstala el bot desde el portal.");
+            return false;
+        }
+        try {
+            const res = await fetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
+            const data = await res.json();
+            LICENSE_VALID = data.valid;
+            DAYS_LEFT = data.daysLeft;
+            if (!LICENSE_VALID) {
+                blockUI();
+            }
+            return LICENSE_VALID;
+        } catch (e) {
+            console.error("Error validando licencia", e);
+            return false;
+        }
+    }
+
+    function blockUI() {
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:Arial;text-align:center;';
+        overlay.innerHTML = `
+            <h1 style="color:#ff5252;font-size:40px;margin-bottom:20px;">⚔️ LICENCIA EXPIRADA</h1>
+            <p style="font-size:18px;margin-bottom:30px;">Tu tiempo de gloria ha terminado. Renueva tu suscripción para seguir dominando.</p>
+            <a href="https://grepobot-web.onrender.com" target="_blank" style="padding:15px 30px;background:#4caf50;color:white;text-decoration:none;border-radius:50px;font-weight:bold;font-size:20px;">RENOVAR AHORA</a>
+        `;
+        document.body.appendChild(overlay);
+    }
+
+    // Iniciar validación
+    checkLicense();
+
     const PANEL_ID = 'script-panel';
     const ENCAIXE_ID = 'painel-encaixe-ataque';
     const STORAGE_KEY = 'bot_grepo_config_v1';
