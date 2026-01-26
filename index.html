@@ -48,7 +48,7 @@
 (async function(){
   const $ = id => document.getElementById(id);
   const logEl = $('log');
-  function log(...args){ console.log(...args); logEl.textContent += args.map(a=>typeof a === 'object' ? JSON.stringify(a,null,2) : String(a)).join(' ') + '\\n'; logEl.scrollTop = 9999; }
+  function log(...args){ console.log(...args); logEl.textContent += args.map(a=>typeof a === 'object' ? JSON.stringify(a,null,2) : String(a)).join(' ') + '\n'; logEl.scrollTop = 9999; }
   function setStatus(t){ $('status').innerText = 'Estado: ' + t; log('STATUS:', t); }
 
   // Helper: load config from backend
