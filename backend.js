@@ -1,5 +1,5 @@
 /**
- * backend.js - VERSIÓN PREMIUM FINAL
+ * backend.js - VERSIÓN PREMIUM FINAL (CORREGIDA)
  * Servidor Express optimizado para Render con SQLite, Registro, PayPal y Soporte IA.
  */
 
