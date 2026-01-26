@@ -178,6 +178,26 @@ app.post('/api/paypal/capture-order', (req, res) => {
 
 app.post('/api/support', (req, res) => {
     const q = (req.body.question || '').toLowerCase();
+    let a = "No estoy seguro de entenderte, Comandante. Prueba preguntando por 'planner', 'autobuild', 'esquiva', 'instalación' o 'pagos'.";
 
+    if (q.includes('hola') || q.includes('saludos')) a = "¡Saludos, Comandante! Estoy listo para ayudarte a dominar el mundo. ¿Qué necesitas saber sobre el bot?";
+    if (q.includes('instalar') || q.includes('instalacion')) a = "Para instalar: 1. Instala la extensión Tampermonkey. 2. Regístrate en este portal. 3. En tu Dashboard, pulsa 'Instalar en Tampermonkey'. ¡Es automático!";
+    if (q.includes('pagar') || q.includes('pago') || q.includes('comprar') || q.includes('precio')) a = "Puedes adquirir licencias de 1, 6 o 12 meses en tu Dashboard usando PayPal. Los precios son $7.99, $45 y $80 respectivamente.";
+    if (q.includes('planner') || q.includes('planificador') || q.includes('ataque')) a = "El Planner captura ataques de la ventana de 'Ataques entrantes'. Debes tener esa ventana abierta para que el bot pueda ver los tiempos y enviar los refuerzos en el segundo exacto.";
+    if (q.includes('ojo') || q.includes('verificar')) a = "El botón del 'Ojo' sirve para que el bot compruebe si puede ver la ventana necesaria (Senado, Cuartel, etc.). Si sale verde, ¡todo está listo!";
+    if (q.includes('autobuild') || q.includes('construir')) a = "El AutoBuild gestiona tu cola de construcción. Selecciona los edificios que quieres subir y el bot los pondrá en cola cuando tengas recursos.";
+    if (q.includes('esquiva') || q.includes('dodge')) a = "El modo Dodge saca tus tropas de la ciudad justo antes de un ataque y las trae de vuelta un segundo después. ¡Ideal para salvar tu ejército!";
+    if (q.includes('trial') || q.includes('gratis') || q.includes('7 dias')) a = "Todos los nuevos comandantes reciben 7 días de Trial gratuito al registrarse para probar todas las funciones.";
+    if (q.includes('seguro') || q.includes('ban') || q.includes('detectar')) a = "Nuestro bot usa tiempos de respuesta humanos y es indetectable por el sistema anti-bot de Grepolis. ¡Úsalo con confianza!";
 
+    sendJson(res, { answer: a });
+});
 
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+// --- START SERVER ---
+app.listen(PORT, () => {
+    console.log(`\n🚀 SERVIDOR PREMIUM CORRIENDO EN PUERTO ${PORT}\n`);
+});
+
+// FIN DEL ARCHIVO - VERIFICACIÓN DE CIERRE COMPLETA

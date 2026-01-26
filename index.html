@@ -106,6 +106,16 @@
         .guide-item h3 { margin-bottom: 15px; color: white; }
         .guide-item p { color: var(--text-muted); font-size: 15px; }
 
+        /* Manual Section */
+        .manual-container { max-width: 1000px; margin: 0 auto; }
+        .manual-step { margin-bottom: 40px; display: flex; gap: 30px; align-items: center; }
+        .manual-step:nth-child(even) { flex-direction: row-reverse; }
+        .manual-text { flex: 1; }
+        .manual-text h3 { color: var(--gold); margin-bottom: 15px; font-size: 24px; }
+        .manual-text p { line-height: 1.6; color: var(--text-muted); }
+        .manual-img { flex: 1; border-radius: 15px; border: 1px solid var(--glass-border); overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .manual-img img { width: 100%; display: block; }
+
         /* Gallery Section */
         .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 40px; }
         .gallery-item { position: relative; overflow: hidden; border-radius: 15px; border: 1px solid var(--glass-border); background: #111; }
@@ -119,6 +129,7 @@
         @media (max-width: 800px) {
             .portal-container { grid-template-columns: 1fr; }
             .hero h1 { font-size: 40px; }
+            .manual-step { flex-direction: column !important; }
         }
 
         .input-group { margin-bottom: 20px; }
@@ -199,7 +210,7 @@
     <nav>
         <div class="logo">⚔️ GrepoBot Pro</div>
         <div class="nav-links">
-            <a href="#guide">Manual</a>
+            <a href="#manual">Guía</a>
             <a href="#gallery">Galería</a>
             <a href="#portal">Dashboard</a>
             <a href="#portal" style="color: var(--gold)">Premium</a>
@@ -209,23 +220,35 @@
     <section class="hero">
         <h1>Domina el Mundo <br><span>Automáticamente</span></h1>
         <p>La herramienta de élite para Grepolis. Planner de precisión, AutoBuild inteligente y soporte con IA. Indetectable y profesional.</p>
-        <button class="cta-button" onclick="scrollToPortal()">Comenzar Trial de 7 Días</button>
+        <div style="margin-top: 20px; max-width: 600px;" class="manual-img">
+            <img src="assets/bot_preview.png" alt="Bot Preview">
+        </div>
+        <button class="cta-button" style="margin-top: 40px;" onclick="scrollToPortal()">Comenzar Trial de 7 Días</button>
     </section>
 
-    <section id="guide" class="guide-section">
+    <section id="manual" class="guide-section">
         <h2 class="section-title">Manual de Operaciones</h2>
-        <div class="guide-grid">
-            <div class="guide-item">
-                <h3>1. Instalación Rápida</h3>
-                <p>Instala <strong>Tampermonkey</strong> en tu navegador. Luego, regístrate en nuestro portal y pulsa el botón de instalación automática. ¡Listo en 30 segundos!</p>
+        <div class="manual-container">
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>1. El Planificador Maestro</h3>
+                    <p>Abre la ventana de <strong>Ataques Entrantes</strong> en Grepolis. Pulsa el botón "Capturar" en el bot. El bot leerá todos los ataques y te permitirá programar refuerzos o ataques para que lleguen en el segundo exacto.</p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/planner.png" alt="Planner"></div>
             </div>
-            <div class="guide-item">
-                <h3>2. Planner de Precisión</h3>
-                <p>Captura cualquier ventana de ataque en el juego. Ajusta el segundo exacto de llegada y el bot se encargará de enviarlo con precisión milimétrica.</p>
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>2. El "Ojo" de Verificación</h3>
+                    <p>Cada sección tiene un botón con un icono de <strong>Ojo (👁️)</strong>. Úsalo para que el bot verifique si puede ver la ventana necesaria (Senado, Cuartel, etc.). Si el botón se pone verde, el bot está listo para actuar.</p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Ojo"></div>
             </div>
-            <div class="guide-item">
-                <h3>3. AutoBuild Inteligente</h3>
-                <p>Configura los niveles máximos de tus edificios. El bot gestionará la cola de construcción optimizando tus recursos mientras no estás.</p>
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>3. Mantener Ventanas Abiertas</h3>
+                    <p>Para que el <strong>Planner</strong> envíe ataques automáticamente, la ventana del planificador de Grepolis debe estar abierta. El bot simula tus clics, por lo que necesita ver los elementos en pantalla.</p>
+                </div>
+                <div class="manual-img"><img src="assets/bot_preview.png" alt="Ventanas"></div>
             </div>
         </div>
     </section>
