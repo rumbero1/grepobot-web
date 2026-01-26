@@ -1,333 +1,753 @@
-/**
- * backend.js
- * Servidor Express con:
- * - SQLite persistente en ./data/grepobot.db
- * - Registro / Login con bcrypt (token por usuario)
- * - /api/check-license, /api/descargar, /api/paypal, /api/support, /api/config, /health
- */
+!DOCTYPE html>
+<html lang="es">
 
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
-const bcrypt = require('bcryptjs');
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GrepoBot Pro - Automatización de Élite</title>
 
-const app = express();
-const PORT = process.env.PORT || 10000;
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'grepobot_v2.db');
+  <!-- CONEXIÓN CON PAYPAL -->
+  <script
+    src="https://www.paypal.com/sdk/js?client-id=ARI8xtvx-zlykSa7RFIka_g5C3_iF8-CaK_ipoT_L9C_mDJiuUyTgTv_HLLHeXNPHrlwRQbmcPmYWIGs&currency=USD"></script>
 
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname)));
-
-// Asegurar carpeta data
-const dataDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-    console.log('📁 Creada carpeta data:', dataDir);
-}
-
-// Conectar DB
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error('Error abriendo la BD:', err);
-        process.exit(1);
+  <style>
+    :root {
+      --primary: #4caf50;
+      --dark: #121212;
+      --dark-card: #1e1e1e;
+      --text: #e0e0e0;
+      --text-muted: #a0a0a0;
+      --gold: #ffd700;
     }
-    console.log('✅ SQLite listo en', DB_PATH);
-});
 
-// Inicializar esquema
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-    id INTEGER PRIMARY KEY,
-    username TEXT UNIQUE,
-    email TEXT UNIQUE,
-    password_hash TEXT,
-    token TEXT UNIQUE,
-    license_expires_at INTEGER DEFAULT 0,
-    trial_used INTEGER DEFAULT 0,
-    purchased INTEGER DEFAULT 0,
-    created_at INTEGER
-  )`);
+    body {
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+    }
 
-    db.run(`CREATE TABLE IF NOT EXISTS logins (
-    id INTEGER PRIMARY KEY,
-    usuario_id INTEGER,
-    fecha INTEGER,
-    ip TEXT,
-    success INTEGER
-  )`);
+    /* HEADER & NAV */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 50px;
+      background: rgba(0, 0, 0, 0.9);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid #333;
+    }
 
-    db.run(`CREATE TABLE IF NOT EXISTS descargas (
-    id INTEGER PRIMARY KEY,
-    usuario_id INTEGER,
-    fecha INTEGER,
-    ip TEXT,
-    variant TEXT
-  )`);
-});
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
 
-// Helpers
-function nowMs() { return Date.now(); }
-function daysToMs(days) { return days * 24 * 60 * 60 * 1000; }
-function getIp(req) {
-    return req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-}
-function generateToken() {
-    return (typeof require('crypto').randomUUID === 'function')
-        ? require('crypto').randomUUID()
-        : require('crypto').randomBytes(16).toString('hex');
-}
-function sendJson(res, obj) {
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
-    res.json(obj);
-}
-function sanitizeFilename(name) {
-    return name.replace(/[^a-z0-9_\-\.]/gi, '_');
-}
-function getTokenFromReq(req) {
-    const auth = req.get('authorization');
-    if (auth && auth.startsWith('Bearer ')) return auth.slice(7).trim();
-    if (req.query && req.query.token) return req.query.token;
-    if (req.body && req.body.token) return req.body.token;
-    return null;
-}
-function getUserByToken(token) {
-    return new Promise((resolve, reject) => {
-        if (!token) return resolve(null);
-        db.get('SELECT * FROM usuarios WHERE token = ?', [token], (err, row) => {
-            if (err) return reject(err);
-            resolve(row || null);
+    .nav-links a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 20px;
+      font-size: 14px;
+      transition: 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    .btn-login {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 8px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .btn-login:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* HERO SECTION */
+    .hero {
+      text-align: center;
+      padding: 100px 20px;
+      background: radial-gradient(circle at center, #2a2a2a 0%, #121212 100%);
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+      color: white;
+    }
+
+    .hero span {
+      color: var(--primary);
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-muted);
+      max-width: 600px;
+      margin: 0 auto 40px;
+    }
+
+    .cta-button {
+      background: var(--primary);
+      color: white;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 5px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+      transition: transform 0.2s;
+      text-align: center;
+    }
+
+    .cta-button:hover {
+      transform: translateY(-2px);
+    }
+
+    /* MANUAL DE USO */
+    .guide-section {
+      background: #1a1a1a;
+      padding: 80px 20px;
+      border-top: 1px solid #333;
+    }
+
+    .guide-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .guide-item {
+      margin-bottom: 30px;
+      background: #252525;
+      padding: 20px;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .guide-item h3 {
+      color: #fff;
+      margin-top: 0;
+    }
+
+    .guide-item p {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    /* GALERÍA */
+    .gallery-section {
+      padding: 60px 20px;
+      text-align: center;
+      background: #151515;
+    }
+
+    .gallery-grid {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      flex-wrap: wrap;
+    }
+
+    .gallery-item {
+      text-align: center;
+    }
+
+    .gallery-item img {
+      width: 300px;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 2px solid #333;
+      transition: 0.3s;
+      cursor: pointer;
+    }
+
+    .gallery-item img:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .gallery-item p {
+      color: #aaa;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    /* LOGIN / DOWNLOAD AREA */
+    #portal {
+      padding: 80px 20px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .login-box {
+      background: var(--dark-card);
+      padding: 40px;
+      border-radius: 10px;
+      border: 1px solid #444;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    .input-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .input-group input {
+      width: 100%;
+      padding: 12px;
+      background: #2d2d2d;
+      border: 1px solid #444;
+      color: white;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    .alert {
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-size: 14px;
+      display: none;
+      text-align: center;
+    }
+
+    .alert.error {
+      background: rgba(255, 82, 82, 0.1);
+      color: #ff5252;
+      border: 1px solid #ff5252;
+    }
+
+    .alert.success {
+      background: rgba(76, 175, 80, 0.1);
+      color: #4caf50;
+      border: 1px solid #4caf50;
+    }
+
+    #dashboard {
+      display: none;
+    }
+
+    /* PRECIOS Y PLANES */
+    .premium-box {
+      background: #1a1a1a;
+      padding: 25px;
+      border: 1px solid #333;
+      border-radius: 10px;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    .plans-container {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      flex-wrap: wrap;
+    }
+
+    .plan-card {
+      background: #252525;
+      border: 2px solid #444;
+      border-radius: 10px;
+      padding: 15px;
+      width: 30%;
+      min-width: 120px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .plan-card:hover {
+      border-color: var(--gold);
+      transform: translateY(-5px);
+    }
+
+    .plan-card.selected {
+      border-color: var(--gold);
+      background: #2a2a1a;
+      box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+    }
+
+    .plan-name {
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .plan-price {
+      font-size: 20px;
+      color: var(--gold);
+      font-weight: bold;
+      display: block;
+    }
+
+    .plan-save {
+      font-size: 11px;
+      color: #4caf50;
+      display: block;
+      margin-top: 5px;
+    }
+
+    /* CHATBOT */
+    .chat-widget {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+    }
+
+    .chat-btn {
+      background: var(--primary);
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: white;
+      transition: 0.3s;
+    }
+
+    .chat-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .chat-window {
+      display: none;
+      position: absolute;
+      bottom: 80px;
+      right: 0;
+      width: 350px;
+      height: 500px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      background: #252525;
+      padding: 15px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-header h3 {
+      margin: 0;
+      font-size: 16px;
+      color: white;
+    }
+
+    .chat-body {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chat-input-area {
+      padding: 15px;
+      background: #252525;
+      display: flex;
+      gap: 10px;
+      border-top: 1px solid #333;
+    }
+
+    .chat-input-area input {
+      margin: 0;
+      padding: 10px;
+      flex: 1;
+      border-radius: 20px;
+      border: 1px solid #444;
+      font-size: 14px;
+      background: #333;
+      color: white;
+    }
+
+    .chat-input-area button {
+      background: var(--primary);
+      border: none;
+      color: white;
+      padding: 0 15px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
+
+    .msg {
+      padding: 10px 15px;
+      border-radius: 15px;
+      max-width: 80%;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .msg.bot {
+      background: #333;
+      align-self: flex-start;
+      color: #ddd;
+      border-bottom-left-radius: 2px;
+    }
+
+    .msg.user {
+      background: var(--primary);
+      align-self: flex-end;
+      color: #fff;
+      border-bottom-right-radius: 2px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 12px;
+      border-top: 1px solid #333;
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav>
+    <div class="logo">⚔️ GrepoBot Pro</div>
+    <div class="nav-links">
+      <a href="#guide">Manual</a>
+      <a href="#portal">Precios</a>
+      <button class="btn-login" onclick="scrollToPortal()">Area Clientes</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <h1>Domina el Mundo, <span>Automáticamente</span></h1>
+    <p>El bot más avanzado para Grepolis. Indetectable y con Soporte IA incluido.</p>
+    <button class="cta-button" onclick="scrollToPortal()">PRUEBA DE 7 DÍAS</button>
+  </section>
+
+  <!-- MANUAL DE USO -->
+  <section id="guide" class="guide-section">
+    <div class="guide-container">
+      <h2 class="section-title">Manual de Inicio Rápido</h2>
+      <div class="guide-item">
+        <h3>1. Instalación (Paso a Paso)</h3>
+        <p>1. Instala la extensión <strong>Tampermonkey</strong> en tu navegador (Chrome, Edge o Firefox).<br>
+          2. Regístrate abajo con tu apodo y correo.<br>
+          3. Pulsa "INSTALAR BOT" en el panel. Se abrirá una pestaña de Tampermonkey; pulsa el botón
+          <strong>Instalar</strong> (o Reinstalar).<br>
+          4. Entra en Grepolis y verás el menú del bot a la derecha.</p>
+      </div>
+      <div class="guide-item">
+        <h3>2. Cómo usar el Planner (Ataques al segundo)</h3>
+        <p>1. Abre la ventana de ataque de una ciudad en el juego.<br>
+          2. En el panel del bot (pestaña Planner), pulsa <strong>Capturar</strong>.<br>
+          3. Ajusta la hora de llegada deseada y pulsa <strong>Iniciar</strong>. El bot enviará el ataque
+          automáticamente en el momento exacto.</p>
+      </div>
+      <div class="guide-item">
+        <h3>3. AutoBuild (Niveles de Edificios)</h3>
+        <p>En la pestaña <strong>BUILD</strong>, puedes marcar los edificios que quieres subir y escribir el nivel
+          máximo. El bot gestionará la cola de construcción por ti.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERÍA VISUAL -->
+  <section id="gallery" class="gallery-section">
+    <h2>Interfaz del Bot</h2>
+    <div class="gallery-grid">
+      <div class="gallery-item">
+        <img src="assets/screenshot1.png" alt="Planner">
+        <p>Planner de Precisión</p>
+      </div>
+      <div class="gallery-item">
+        <img src="assets/screenshot2.png" alt="Menu">
+        <p>Menú Completo</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTAL (LOGIN/DOWNLOAD/PAYPAL) -->
+  <section id="portal">
+    <div class="login-box">
+      <h2 style="text-align:center; margin-bottom:30px;">Acceso al Portal</h2>
+
+      <!-- FORMULARIO LOGIN / REGISTRO -->
+      <div id="login-form">
+        <div class="input-group">
+          <label>Usuario / Apodo</label>
+          <input type="text" id="user" placeholder="Tu nombre de usuario">
+        </div>
+        <div id="email-group" class="input-group" style="display:none;">
+          <label>Correo Electrónico</label>
+          <input type="email" id="email" placeholder="tu@email.com">
+        </div>
+        <div class="input-group">
+          <label>Contraseña</label>
+          <input type="password" id="pass" placeholder="Tu contraseña">
+        </div>
+        <button id="btn-main" class="cta-button" style="width:100%; font-size:16px;" onclick="acceder()">ENTRAR</button>
+        <p id="toggle-text"
+          style="text-align:center; font-size:13px; margin-top:15px; cursor:pointer; color:var(--primary);"
+          onclick="toggleRegistro()">¿No tienes cuenta? Regístrate aquí</p>
+        <div id="msg-login" class="alert"></div>
+      </div>
+
+      <!-- PANEL DE CLIENTE (DASHBOARD) -->
+      <div id="dashboard">
+        <h3 style="text-align:center; color:#4caf50;">Hola, <span id="user-display"></span></h3>
+
+        <!-- ESTADO LICENCIA -->
+        <div id="status-licencia" class="alert success" style="display:block; margin-bottom:20px;">
+          Cargando...
+        </div>
+
+        <!-- DESCARGA -->
+        <div style="background:#222; padding:15px; border-radius:5px; margin-bottom:20px; text-align:center;">
+          <h4>Instalación del Bot</h4>
+          <div style="display:flex; gap:10px; flex-direction:column;">
+            <button class="cta-button" style="width:100%; background:#2196F3;" onclick="descargarBot('tampermonkey')">📥
+              INSTALAR EN TAMPERMONKEY</button>
+            <button class="cta-button" style="width:100%; background:#555; font-size:14px;"
+              onclick="descargarBot('direct')">💾 Descarga Directa (.js)</button>
+          </div>
+        </div>
+
+        <!-- PRECIOS Y PAYPAL -->
+        <div class="premium-box">
+          <h3 style="text-align:center; color:var(--gold);">💎 Renovar Licencia</h3>
+          <p style="text-align:center; color:#aaa; margin-bottom:20px;">Elige tu plan:</p>
+
+          <div class="plans-container">
+            <div class="plan-card selected" onclick="selectPlan('1_MES', this)">
+              <span class="plan-name">1 Mes</span>
+              <span class="plan-price">$7.99</span>
+            </div>
+            <div class="plan-card" onclick="selectPlan('6_MESES', this)">
+              <span class="plan-name">6 Meses</span>
+              <span class="plan-price">$45.00</span>
+              <span class="plan-save">Ahorra 10%</span>
+            </div>
+            <div class="plan-card" onclick="selectPlan('12_MESES', this)">
+              <span class="plan-name">1 Año</span>
+              <span class="plan-price">$80.00</span>
+              <span class="plan-save">Ahorra 20%</span>
+            </div>
+          </div>
+
+          <div id="paypal-button-container"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHATBOT WIDGET -->
+  <div class="chat-widget">
+    <button class="chat-btn" onclick="toggleChat()">🤖</button>
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-header">
+        <h3>Soporte IA GrepoBot</h3>
+        <span style="cursor:pointer;" onclick="toggleChat()">✖</span>
+      </div>
+      <div class="chat-body" id="chatBody">
+        <div class="msg bot">Hola 👋 Soy la IA de soporte. ¿En qué puedo ayudarte? <br><br>Ejemplos:<br>- "No me
+          funciona"<br>- "¿Cómo pagar?"<br>- "Instalar"</div>
+      </div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Escribe tu duda..."
+          onkeypress="if(event.key==='Enter') sendMessage()">
+        <button onclick="sendMessage()">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 GrepoBot Team. Software educativo.</p>
+  </footer>
+
+  <script>
+    const API = window.location.origin + '/api';
+    let currentUserId = null;
+    let currentUserToken = null;
+    let selectedPlanId = '1_MES';
+    let isRegistro = false;
+
+    function scrollToPortal() { document.getElementById('portal').scrollIntoView({ behavior: 'smooth' }); }
+
+    function toggleRegistro() {
+      isRegistro = !isRegistro;
+      document.getElementById('email-group').style.display = isRegistro ? 'block' : 'none';
+      document.getElementById('btn-main').textContent = isRegistro ? 'REGISTRARSE' : 'ENTRAR';
+      document.getElementById('toggle-text').textContent = isRegistro ? '¿Ya tienes cuenta? Entra aquí' : '¿No tienes cuenta? Regístrate aquí';
+    }
+
+    function selectPlan(planId, element) {
+      selectedPlanId = planId;
+      document.querySelectorAll('.plan-card').forEach(el => el.classList.remove('selected'));
+      element.classList.add('selected');
+      renderPayPalButtons();
+    }
+
+    async function acceder() {
+      const u = document.getElementById('user').value;
+      const p = document.getElementById('pass').value;
+      const e = document.getElementById('email').value;
+      const msg = document.getElementById('msg-login');
+
+      if (!u || !p || (isRegistro && !e)) {
+        msg.textContent = "Faltan datos"; msg.className = "alert error"; msg.style.display = 'block'; return;
+      }
+
+      const endpoint = isRegistro ? '/registro' : '/login';
+      const body = isRegistro ? { username: u, password: p, email: e } : { username: u, password: p };
+
+      try {
+        let res = await fetch(API + endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
-    });
-}
+        let data = await res.json();
 
-// ENDPOINTS
+        if (data.success) {
+          currentUserId = data.usuarioId;
+          currentUserToken = data.token;
+          document.getElementById('login-form').style.display = 'none';
+          document.getElementById('dashboard').style.display = 'block';
+          document.getElementById('user-display').textContent = data.username;
 
-app.get('/health', (req, res) => {
-    sendJson(res, { status: 'ok', db: DB_PATH, now: nowMs() });
-});
-
-// Registro (POST)
-app.post('/api/registro', async (req, res) => {
-    try {
-        const { username, password, email } = req.body || {};
-        if (!username || !password || !email) return sendJson(res, { success: false, error: 'Faltan username, password o email' });
-
-        const createdAt = nowMs();
-        const passwordHash = await bcrypt.hash(password, 10);
-        const token = generateToken();
-        const licenseExpires = nowMs() + daysToMs(7); // trial 7 días
-
-        db.run('INSERT INTO usuarios (username, email, password_hash, token, license_expires_at, trial_used, purchased, created_at) VALUES (?,?,?,?,?,?,?,?)',
-            [username, email, passwordHash, token, licenseExpires, 0, 0, createdAt],
-            function (err) {
-                if (err) {
-                    if (err.message && err.message.includes('UNIQUE')) {
-                        const field = err.message.includes('username') ? 'Usuario' : 'Email';
-                        return sendJson(res, { success: false, error: `${field} ya registrado` });
-                    }
-                    console.error('DB error registro:', err);
-                    return sendJson(res, { success: false, error: 'Error en BD: ' + err.message });
-                }
-                sendJson(res, {
-                    success: true,
-                    usuarioId: this.lastID,
-                    username,
-                    token,
-                    daysLeft: 7
-                });
-            });
-    } catch (e) {
-        console.error(e);
-        sendJson(res, { success: false, error: 'Error interno' });
-    }
-});
-
-// Login (POST)
-app.post('/api/login', (req, res) => {
-    const { username, password } = req.body || {};
-    const ip = getIp(req);
-    if (!username || !password) return sendJson(res, { success: false, error: 'Faltan datos' });
-
-    db.get('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username], async (err, user) => {
-        if (err) { console.error(err); return sendJson(res, { success: false, error: 'Error BD' }); }
-        if (!user) {
-            db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [0, nowMs(), ip, 0]);
-            return sendJson(res, { success: false, error: 'Usuario no encontrado' });
+          updateLicenseStatus(data.daysLeft);
+          renderPayPalButtons();
+        } else {
+          msg.textContent = data.error; msg.className = "alert error"; msg.style.display = 'block';
         }
+      } catch (err) {
+        msg.textContent = "Error de conexión"; msg.className = "alert error"; msg.style.display = 'block';
+      }
+    }
 
-        const match = await bcrypt.compare(password, user.password_hash);
-        db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [user.id, nowMs(), ip, match ? 1 : 0]);
+    function updateLicenseStatus(days) {
+      const statusDiv = document.getElementById('status-licencia');
+      if (days <= 0) {
+        statusDiv.className = "alert error";
+        statusDiv.innerHTML = `⛔ <b>LICENCIA CADUCADA</b><br>Renueva abajo para continuar.`;
+      } else {
+        statusDiv.className = "alert success";
+        statusDiv.innerHTML = `✅ <b>Licencia Activa</b> (${days} días restantes)`;
+      }
+    }
 
-        if (!match) return sendJson(res, { success: false, error: 'Contraseña incorrecta' });
+    function descargarBot(type) {
+      if (!currentUserId || !currentUserToken) return alert("Sesión expirada");
+      const variant = type === 'tampermonkey' ? 'tampermonkey' : 'direct';
+      // Nueva URL amigable para Tampermonkey
+      window.location.href = `${API}/descargar/${currentUserId}/${currentUserToken}/${variant}/GrepoBot.user.js`;
+    }
 
-        sendJson(res, {
-            success: true,
-            usuarioId: user.id,
-            username: user.username,
-            token: user.token,
-            daysLeft: Math.max(0, Math.ceil((user.license_expires_at - nowMs()) / (24 * 3600 * 1000))),
-            purchased: !!user.purchased,
-            trial_used: !!user.trial_used
+    function renderPayPalButtons() {
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+
+      if (typeof paypal === 'undefined') {
+        container.innerHTML = '<p style="color:#ff5252; font-size:12px;">Error: No se pudo cargar el SDK de PayPal. Reintentando...</p>';
+        setTimeout(renderPayPalButtons, 3000);
+        return;
+      }
+
+      paypal.Buttons({
+        createOrder: function (data, actions) {
+          return fetch(API + '/paypal/create-order', {
+            method: 'post',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ planId: selectedPlanId, usuarioId: currentUserId })
+          }).then(res => res.json()).then(orderData => orderData.id);
+        },
+        onApprove: function (data, actions) {
+          return fetch(API + '/paypal/capture-order', {
+            method: 'post',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderID: data.orderID, usuarioId: currentUserId, planId: selectedPlanId })
+          }).then(res => res.json()).then(details => {
+            alert('✅ ¡PAGO COMPLETADO! Licencia renovada.');
+            location.reload();
+          });
+        },
+        onError: function (err) {
+          console.error('PayPal Error:', err);
+          alert('Error al procesar el pago con PayPal.');
+        }
+      }).render('#paypal-button-container');
+    }
+
+    function toggleChat() {
+      const win = document.getElementById('chatWindow');
+      win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      input.value = '';
+
+      try {
+        const res = await fetch(API + '/support', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: text })
         });
-    });
-});
-
-// Check license
-app.get('/api/check-license', async (req, res) => {
-    try {
-        const token = getTokenFromReq(req);
-        const user = await getUserByToken(token);
-        if (!user) return sendJson(res, { valid: false, daysLeft: 0, message: 'Usuario no encontrado o token inválido' });
-        const leftMs = user.license_expires_at - nowMs();
-        const valid = leftMs > 0;
-        sendJson(res, { valid, daysLeft: Math.max(0, Math.ceil(leftMs / (24 * 3600 * 1000))), message: valid ? 'Licencia activa' : 'Licencia expirada' });
-    } catch (e) {
-        console.error(e);
-        sendJson(res, { valid: false, daysLeft: 0, message: 'Error interno' });
-    }
-});
-
-// Descargar script (Ruta amigable para Tampermonkey)
-app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req, res) => {
-    req.query = { ...req.query, ...req.params };
-    return handleDownload(req, res);
-});
-
-// Descargar script (Ruta genérica)
-app.get('/api/descargar', async (req, res) => {
-    return handleDownload(req, res);
-});
-
-async function handleDownload(req, res) {
-    try {
-        const { usuarioId, variant, filename, token: queryToken } = req.query;
-        const token = queryToken || getTokenFromReq(req);
-        const ip = getIp(req);
-
-        if (!usuarioId || !variant) return res.status(400).json({ error: 'Faltan parametros usuarioId o variant' });
-
-        const user = await getUserByToken(token);
-        if (!user || String(user.id) !== String(usuarioId)) return res.status(403).json({ error: 'Token inválido o usuario no coincide' });
-
-        const now = nowMs();
-        const leftMs = user.license_expires_at - now;
-
-        if (leftMs <= 0) return res.status(403).json({ error: 'Licencia expirada. Por favor renueva.' });
-
-        // Registrar descarga
-        db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, now, ip, variant]);
-
-        let scriptFile = null;
-        if (variant.includes('attack')) scriptFile = path.join(__dirname, 'scripts', 'bot_attack_only.user.js');
-        else scriptFile = path.join(__dirname, 'scripts', 'bot_full.user.js');
-
-        if (!fs.existsSync(scriptFile)) return res.status(404).json({ error: 'Script no encontrado en el servidor' });
-
-        let code = fs.readFileSync(scriptFile, 'utf8');
-
-        // Inyección de licencia
-        const injection = `/* === INJECTION: license check === */
-const GREPOBOT_USER_ID = ${JSON.stringify(user.id)};
-const GREPOBOT_TOKEN = ${JSON.stringify(token)};
-async function __grepobot_check_license() {
-  try {
-    const res = await fetch('${req.protocol}://${req.get('host')}/api/check-license?token=' + encodeURIComponent(GREPOBOT_TOKEN));
-    const j = await res.json();
-    if (!j.valid) {
-      alert('La licencia ha expirado. Por favor renueva en grepobot-web.onrender.com');
-      const btnStart = document.getElementById('btn-iniciar');
-      if (btnStart) btnStart.disabled = true;
-      return false;
-    }
-    return true;
-  } catch(e) { return false; }
-}
-__grepobot_check_license();
-setInterval(__grepobot_check_license, 4 * 3600 * 1000);
-/* === END INJECTION === */\n\n`;
-
-        code = injection + code;
-        res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(filename || 'GrepoBot.user.js')}"`);
-        return res.send(code);
-    } catch (e) {
-        console.error(e);
-        return res.status(500).json({ error: 'Error interno' });
-    }
-}
-
-// Admin Stats
-app.get('/api/admin/stats', async (req, res) => {
-    try {
-        const stats = {};
-        const now = nowMs();
-        const last24h = now - daysToMs(1);
-
-        stats.totalUsuarios = await new Promise(r => db.get('SELECT COUNT(*) as count FROM usuarios', (e, row) => r(row.count)));
-        stats.totalDescargas = await new Promise(r => db.get('SELECT COUNT(*) as count FROM descargas', (e, row) => r(row.count)));
-        stats.licenciasActivas = await new Promise(r => db.get('SELECT COUNT(*) as count FROM usuarios WHERE license_expires_at > ?', [now], (e, row) => r(row.count)));
-        stats.logins24h = await new Promise(r => db.get('SELECT COUNT(*) as count FROM logins WHERE fecha > ? AND success = 1', [last24h], (e, row) => r(row.count)));
-
-        stats.logins = await new Promise(r => db.all(`SELECT l.*, u.username FROM logins l LEFT JOIN usuarios u ON l.usuario_id = u.id ORDER BY l.fecha DESC LIMIT 10`, (e, rows) => r(rows || [])));
-        stats.descargas = await new Promise(r => db.all(`SELECT d.*, u.username FROM descargas d JOIN usuarios u ON d.usuario_id = u.id ORDER BY d.fecha DESC LIMIT 10`, (e, rows) => r(rows || [])));
-        stats.usuarios = await new Promise(r => db.all(`SELECT username, email, created_at, license_expires_at FROM usuarios ORDER BY created_at DESC`, (e, rows) => r(rows || [])));
-
-        sendJson(res, stats);
-    } catch (e) {
-        res.status(500).json({ error: 'Error cargando stats' });
-    }
-});
-
-// PayPal
-app.post('/api/paypal/create-order', (req, res) => {
-    const { planId } = req.body;
-    const prices = { '1_MES': '7.99', '6_MESES': '45.00', '12_MESES': '80.00' };
-    const price = prices[planId] || '7.99';
-    // En un entorno real, aquí llamarías a la API de PayPal para crear la orden
-    sendJson(res, { id: 'ORDER-' + Date.now(), price });
-});
-
-app.post('/api/paypal/capture-order', (req, res) => {
-    const { usuarioId, planId } = req.body;
-    const daysMap = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 };
-    const days = daysMap[planId] || 30;
-
-    db.get('SELECT license_expires_at FROM usuarios WHERE id = ?', [usuarioId], (err, user) => {
-        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-
-        const currentExpires = Math.max(nowMs(), user.license_expires_at);
-        const newExpires = currentExpires + daysToMs(days);
-
-        db.run('UPDATE usuarios SET purchased = 1, license_expires_at = ? WHERE id = ?', [newExpires, usuarioId], function (err) {
-            if (err) return res.status(500).json({ error: 'Error DB' });
-            sendJson(res, { success: true, message: 'Licencia renovada', daysAdded: days });
-        });
-    });
-});
-
-// Support AI
-app.post('/api/support', async (req, res) => {
-    const { question } = req.body;
-    if (!question) return res.status(400).json({ error: 'Falta pregunta' });
-
-    const q = question.toLowerCase();
-    let answer = "No estoy seguro de cómo ayudarte con eso. Prueba preguntando sobre 'instalar', 'pagar' o 'planner'.";
-
-    if (q.includes('instalar') || q.includes('tampermonkey')) {
-        answer = "Para instalar: 1. Instala Tampermonkey. 2. Inicia sesión en nuestro portal. 3. Pulsa 'INSTALAR BOT'. 4. Acepta la instalación en la pestaña que se abre.";
-    } else if (q.includes('pagar') || q.includes('paypal') || q.includes('precio')) {
-        answer = "Puedes pagar con PayPal desde tu panel de usuario. Tenemos planes de 1 mes ($7.99), 6 meses ($45) y 1 año ($80).";
-    } else if (q.includes('planner') || q.includes('atacar')) {
-        answer = "El Planner te permite ajustar ataques al segundo. Abre la ventana de ataque, captura el comando y ajusta el tiempo de llegada.";
-    } else if (q.includes('niveles') || q.includes('edificios')) {
-        answer = "En la pestaña BUILD puedes poner el nivel máximo para cada edificio. El bot dejará de construir cuando llegue a ese nivel.";
+        const data = await res.json();
+        addMessage(data.answer, 'bot');
+      } catch (e) {
+        addMessage("Lo siento, tengo problemas de conexión.", 'bot');
+      }
     }
 
-    sendJson(res, { success: true, answer });
-});
+    function addMessage(text, type) {
+      const body = document.getElementById('chatBody');
+      const div = document.createElement('div');
+      div.className = `msg ${type}`;
+      div.innerHTML = text;
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+  </script>
 
-// Servir index
+</body>
+
+</html>

@@ -191,20 +191,30 @@ app.get('/api/check-license', async (req, res) => {
     }
 });
 
-// Descargar script
+// Descargar script (Ruta amigable para Tampermonkey)
+app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req, res) => {
+    req.query = { ...req.query, ...req.params };
+    return handleDownload(req, res);
+});
+
+// Descargar script (Ruta genérica)
 app.get('/api/descargar', async (req, res) => {
+    return handleDownload(req, res);
+});
+
+async function handleDownload(req, res) {
     try {
-        const { usuarioId, variant, filename } = req.query;
-        const token = getTokenFromReq(req);
+        const { usuarioId, variant, filename, token: queryToken } = req.query;
+        const token = queryToken || getTokenFromReq(req);
         const ip = getIp(req);
+
         if (!usuarioId || !variant) return res.status(400).json({ error: 'Faltan parametros usuarioId o variant' });
+
         const user = await getUserByToken(token);
         if (!user || String(user.id) !== String(usuarioId)) return res.status(403).json({ error: 'Token inválido o usuario no coincide' });
 
         const now = nowMs();
         const leftMs = user.license_expires_at - now;
-        const isTrial = variant.includes('trial');
-        const isFull = variant.includes('full');
 
         if (leftMs <= 0) return res.status(403).json({ error: 'Licencia expirada. Por favor renueva.' });
 
@@ -241,15 +251,14 @@ setInterval(__grepobot_check_license, 4 * 3600 * 1000);
 /* === END INJECTION === */\n\n`;
 
         code = injection + code;
-        const outFilename = sanitizeFilename(filename || path.basename(scriptFile));
-        res.setHeader('Content-Disposition', `attachment; filename="${outFilename}"`);
         res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${sanitizeFilename(filename || 'GrepoBot.user.js')}"`);
         return res.send(code);
     } catch (e) {
         console.error(e);
         return res.status(500).json({ error: 'Error interno' });
     }
-});
+}
 
 // Admin Stats
 app.get('/api/admin/stats', async (req, res) => {
@@ -322,8 +331,4 @@ app.post('/api/support', async (req, res) => {
 });
 
 // Servir index
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
-app.listen(PORT, () => {
-    console.log(`\n✅ SERVIDOR LISTO EN PUERTO ${PORT}\n`);
-});
