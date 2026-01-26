@@ -64,6 +64,8 @@ function initializeSchema() {
         )`);
         db.run(`CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, ip TEXT, success INTEGER)`);
         db.run(`CREATE TABLE IF NOT EXISTS descargas (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, ip TEXT, variant TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS visitas (id INTEGER PRIMARY KEY, fecha INTEGER, ip TEXT, user_agent TEXT, referrer TEXT)`);
+        db.run(`CREATE TABLE IF NOT EXISTS actividad (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, accion TEXT, detalles TEXT)`);
         console.log('✅ Esquema de BD inicializado');
     });
 }
@@ -116,6 +118,11 @@ app.post('/api/login', (req, res) => {
             return sendJson(res, { success: false, error: 'Credenciales inválidas' });
         }
         const daysLeft = Math.max(0, Math.ceil((user.license_expires_at - nowMs()) / (24 * 3600 * 1000)));
+
+        // Log login
+        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+        db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [user.id, nowMs(), ip, 1]);
+
         sendJson(res, { success: true, usuarioId: user.id, username: user.username, token: user.token, daysLeft });
     });
 });
@@ -151,6 +158,10 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
 
     let code = fs.readFileSync(filePath, 'utf8');
     const injection = `/* LICENSE INJECTION */ const GREPOBOT_TOKEN = "${token}";\n`;
+
+    // Log descarga
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, nowMs(), ip, variant]);
 
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Content-Disposition', 'attachment; filename="GrepoBot.user.js"');
@@ -191,6 +202,72 @@ app.post('/api/support', (req, res) => {
     if (q.includes('seguro') || q.includes('ban') || q.includes('detectar')) a = "Nuestro bot usa tiempos de respuesta humanos y es indetectable por el sistema anti-bot de Grepolis. ¡Úsalo con confianza!";
 
     sendJson(res, { answer: a });
+});
+
+// --- NUEVOS ENDPOINTS DE MONITOREO ---
+
+app.post('/api/log-visit', (req, res) => {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const userAgent = req.headers['user-agent'];
+    const referrer = req.body.referrer || '';
+    db.run('INSERT INTO visitas (fecha, ip, user_agent, referrer) VALUES (?,?,?,?)', [nowMs(), ip, userAgent, referrer]);
+    res.sendStatus(204);
+});
+
+app.post('/api/log-action', async (req, res) => {
+    const { token, accion, detalles } = req.body;
+    const user = await getUserByToken(token);
+    const userId = user ? user.id : null;
+    db.run('INSERT INTO actividad (usuario_id, fecha, accion, detalles) VALUES (?,?,?,?)', [userId, nowMs(), accion, detalles]);
+    res.sendStatus(204);
+});
+
+app.get('/api/admin/stats', (req, res) => {
+    const stats = {};
+    const queries = [
+        { key: 'totalUsuarios', sql: 'SELECT COUNT(*) as count FROM usuarios' },
+        { key: 'totalDescargas', sql: 'SELECT COUNT(*) as count FROM descargas' },
+        { key: 'licenciasActivas', sql: 'SELECT COUNT(*) as count FROM usuarios WHERE license_expires_at > ?', params: [nowMs()] },
+        { key: 'logins24h', sql: 'SELECT COUNT(*) as count FROM logins WHERE fecha > ?', params: [nowMs() - daysToMs(1)] },
+        { key: 'logins', sql: 'SELECT l.*, u.username FROM logins l JOIN usuarios u ON l.usuario_id = u.id ORDER BY l.fecha DESC LIMIT 20' },
+        { key: 'descargas', sql: 'SELECT d.*, u.username, u.license_expires_at FROM descargas d JOIN usuarios u ON d.usuario_id = u.id ORDER BY d.fecha DESC LIMIT 20' },
+        { key: 'usuarios', sql: 'SELECT id, username, created_at as fecha_registro, license_expires_at as fecha_expiracion FROM usuarios ORDER BY created_at DESC' },
+        { key: 'actividad', sql: 'SELECT a.*, u.username FROM actividad a LEFT JOIN usuarios u ON a.usuario_id = u.id ORDER BY a.fecha DESC LIMIT 50' },
+        { key: 'visitas', sql: 'SELECT * FROM visitas ORDER BY fecha DESC LIMIT 50' }
+    ];
+
+    let completed = 0;
+    queries.forEach(q => {
+        const callback = (err, rows) => {
+            if (err) {
+                console.error(`Error en query ${q.key}:`, err);
+                stats[q.key] = [];
+            } else {
+                if (q.sql.includes('COUNT(*)')) {
+                    stats[q.key] = rows[0].count;
+                } else {
+                    // Post-procesar para añadir días restantes
+                    if (q.key === 'descargas' || q.key === 'usuarios') {
+                        rows.forEach(r => {
+                            const exp = r.fecha_expiracion || r.license_expires_at;
+                            r.diasRestantes = Math.max(0, Math.ceil((exp - nowMs()) / (24 * 3600 * 1000)));
+                        });
+                    }
+                    stats[q.key] = rows;
+                }
+            }
+            completed++;
+            if (completed === queries.length) {
+                sendJson(res, stats);
+            }
+        };
+
+        if (q.sql.includes('COUNT(*)')) {
+            db.all(q.sql, q.params || [], callback);
+        } else {
+            db.all(q.sql, q.params || [], callback);
+        }
+    });
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));

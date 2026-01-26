@@ -365,7 +365,35 @@
         const API = window.location.origin + '/api';
         let currentUserId = null, currentUserToken = null, selectedPlanId = '1_MES', isRegistro = false;
 
-        function scrollToPortal() { document.getElementById('portal').scrollIntoView({behavior: 'smooth'}); }
+        // --- MONITORING SYSTEM ---
+        async function logVisit() {
+            try {
+                await fetch('/api/log-visit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ referrer: document.referrer })
+                });
+            } catch (e) { console.error("Log visit failed", e); }
+        }
+
+        async function logAction(accion, detalles = '') {
+            const token = localStorage.getItem('grepobot_token') || currentUserToken;
+            try {
+                await fetch('/api/log-action', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, accion, detalles })
+                });
+            } catch (e) { console.error("Log action failed", e); }
+        }
+
+        // Log visit on load
+        logVisit();
+
+        function scrollToPortal() { 
+            document.getElementById('portal').scrollIntoView({behavior: 'smooth'}); 
+            logAction('SCROLL_TO_PORTAL');
+        }
         
         function setMode(mode) {
             isRegistro = (mode === 'registro');
@@ -374,6 +402,7 @@
             document.getElementById('email-group').style.display = isRegistro ? 'block' : 'none';
             document.getElementById('btn-main').textContent = isRegistro ? 'Crear Cuenta' : 'Entrar al Portal';
             document.getElementById('msg-login').style.display = 'none';
+            logAction('SET_MODE', mode);
         }
 
         function selectPlan(planId, element) {
@@ -381,6 +410,7 @@
             document.querySelectorAll('.plan-card').forEach(el => el.classList.remove('selected'));
             element.classList.add('selected');
             renderPayPalButtons();
+            logAction('SELECT_PLAN', planId);
         }
 
         async function acceder() {
@@ -399,12 +429,15 @@
                 let data = await res.json();
                 if(data.success) {
                     currentUserId = data.usuarioId; currentUserToken = data.token;
+                    localStorage.setItem('grepobot_token', data.token);
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('dashboard').style.display = 'block';
                     document.getElementById('user-display').textContent = data.username;
                     updateLicenseStatus(data.daysLeft); renderPayPalButtons();
+                    logAction(isRegistro ? 'REGISTER_SUCCESS' : 'LOGIN_SUCCESS', data.username);
                 } else {
                     msg.textContent = data.error; msg.className = "alert error"; msg.style.display = "block";
+                    logAction(isRegistro ? 'REGISTER_FAIL' : 'LOGIN_FAIL', data.error);
                 }
             } catch(err) { alert("Error de conexión con el Cuartel General"); }
         }
@@ -426,6 +459,7 @@
 
         function descargarBot(type) {
             if(!currentUserId) return alert("Sesión expirada. Por favor, entra de nuevo.");
+            logAction('DOWNLOAD_BOT', type);
             window.location.href = `${API}/descargar/${currentUserId}/${currentUserToken}/${type}/GrepoBot.user.js`;
         }
 
@@ -443,6 +477,7 @@
 
             paypal.Buttons({
                 createOrder: (data, actions) => {
+                    logAction('PAYPAL_START', selectedPlanId);
                     return actions.order.create({
                         purchase_units: [{
                             amount: { value: price }
@@ -451,6 +486,7 @@
                 },
                 onApprove: (data, actions) => {
                     return actions.order.capture().then(details => {
+                        logAction('PAYPAL_SUCCESS', selectedPlanId);
                         return fetch(API + '/paypal/capture-order', {
                             method: 'post',
                             headers: { 'Content-Type': 'application/json' },
@@ -463,16 +499,23 @@
                 },
                 onError: (err) => { 
                     console.error("PayPal Error:", err); 
+                    logAction('PAYPAL_ERROR', err.message);
                     alert("Error al procesar el pago. Asegúrate de usar una cuenta Sandbox."); 
                 }
             }).render('#paypal-button-container');
         }
 
-        function toggleChat() { const win = document.getElementById('chatWindow'); win.style.display = win.style.display === 'flex' ? 'none' : 'flex'; }
+        function toggleChat() { 
+            const win = document.getElementById('chatWindow'); 
+            const isOpen = win.style.display === 'flex';
+            win.style.display = isOpen ? 'none' : 'flex'; 
+            logAction('TOGGLE_CHAT', isOpen ? 'CLOSE' : 'OPEN');
+        }
         
         async function sendMessage() {
             const input = document.getElementById('chatInput'), text = input.value.trim();
             if(!text) return; addMessage(text, 'user'); input.value = '';
+            logAction('CHAT_MESSAGE', text);
             try {
                 const res = await fetch(API + '/support', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ question: text }) });
                 const data = await res.json(); addMessage(data.answer, 'bot');
@@ -483,6 +526,13 @@
             const body = document.getElementById('chatBody'), div = document.createElement('div');
             div.className = `msg ${type}`; div.innerHTML = text; body.appendChild(div); body.scrollTop = body.scrollHeight;
         }
+
+        // Log navigation clicks
+        document.querySelectorAll('.nav-links a').forEach(link => {
+            link.addEventListener('click', () => {
+                logAction('NAVIGATE', link.innerText);
+            });
+        });
     </script>
 </body>
 </html>
