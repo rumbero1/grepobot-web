@@ -388,8 +388,17 @@
 
         function updateLicenseStatus(days) {
             const statusDiv = document.getElementById('status-licencia');
-            statusDiv.className = days <= 0 ? "alert error" : "alert success";
-            statusDiv.innerHTML = days <= 0 ? "⛔ <b>LICENCIA CADUCADA</b>. Renueva para activar el bot." : `✅ <b>Licencia Activa</b>: Quedan ${days} días de servicio.`;
+            if (days <= 0) {
+                statusDiv.className = "alert error";
+                statusDiv.innerHTML = "⛔ <b>LICENCIA CADUCADA</b>. Renueva para activar el bot.";
+            } else if (days <= 7) {
+                statusDiv.className = "alert success";
+                statusDiv.innerHTML = `🎁 <b>Trial de 7 Días Activo</b>: Te quedan ${days} días de prueba gratuita.`;
+            } else {
+                statusDiv.className = "alert success";
+                statusDiv.innerHTML = `💎 <b>Licencia Premium Activa</b>: Quedan ${days} días de servicio.`;
+            }
+            statusDiv.style.display = "block";
         }
 
         function descargarBot(type) {
