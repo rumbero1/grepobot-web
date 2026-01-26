@@ -331,4 +331,3 @@ app.post('/api/support', async (req, res) => {
 });
 
 // Servir index
-
