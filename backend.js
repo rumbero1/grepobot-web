@@ -1,6 +1,6 @@
 /**
- * backend.js - VERSIÓN PREMIUM PARA RENDER
- * Servidor Express con SQLite, Registro, PayPal y Soporte IA.
+ * backend.js - VERSIÓN PREMIUM FINAL
+ * Servidor Express optimizado para Render con SQLite, Registro, PayPal y Soporte IA.
  */
 
 console.log('--- [STARTUP] Iniciando Backend Premium ---');
@@ -140,26 +140,27 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
 
     let code = fs.readFileSync(filePath, 'utf8');
     const injection = `/* LICENSE INJECTION */ const GREPOBOT_TOKEN = "${token}";\n`;
-    
+
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Content-Disposition', 'attachment; filename="GrepoBot.user.js"');
     res.send(injection + code);
 });
 
-app.post('/api/paypal/create-order', (req, res) => {
-    const prices = { '1_MES': '7.99', '6_MESES': '45.00', '12_MESES': '80.00' };
-    sendJson(res, { id: 'ORDER-' + nowMs(), price: prices[req.body.planId] || '7.99' });
-});
-
+// Endpoint de captura de orden (PayPal Client-side flow)
 app.post('/api/paypal/capture-order', (req, res) => {
     const { usuarioId, planId } = req.body;
-    const days = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 }[planId] || 30;
+    const daysMap = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 };
+    const days = daysMap[planId] || 30;
 
     db.get('SELECT license_expires_at FROM usuarios WHERE id = ?', [usuarioId], (err, user) => {
-        if (!user) return res.status(404).send('Usuario no encontrado');
-        const newExpires = Math.max(nowMs(), user.license_expires_at) + daysToMs(days);
-        db.run('UPDATE usuarios SET license_expires_at = ? WHERE id = ?', [newExpires, usuarioId], () => {
-            sendJson(res, { success: true });
+        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+        const currentExpires = Math.max(nowMs(), user.license_expires_at);
+        const newExpires = currentExpires + daysToMs(days);
+
+        db.run('UPDATE usuarios SET purchased = 1, license_expires_at = ? WHERE id = ?', [newExpires, usuarioId], function (err) {
+            if (err) return res.status(500).json({ error: 'Error DB' });
+            sendJson(res, { success: true, message: 'Licencia renovada', daysAdded: days });
         });
     });
 });
@@ -177,4 +178,3 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 // --- START SERVER ---
 app.listen(PORT, () => {
     console.log(`\n🚀 SERVIDOR PREMIUM CORRIENDO EN PUERTO ${PORT}\n`);
-});
