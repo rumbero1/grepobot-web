@@ -8,7 +8,7 @@
 // @grant        none
 // ==/UserScript==
 
-(function() {
-  'use strict';
-  console.log("GrepoBot prueba: script descargado y ejecutado.");
+(function () {
+    'use strict';
+    console.log("GrepoBot prueba: script descargado y ejecutado.");
 })();
