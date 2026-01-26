@@ -1,10 +1,15 @@
 /**
  * backend.js
  * Servidor Express con:
- * - SQLite persistente en ./data/grepobot.db
- * - Registro / Login con bcrypt (token por usuario)
- * - /api/check-license, /api/descargar, /api/paypal, /api/support, /api/config, /health
+ * - SQLite persistente en ./data/grepobot_v2.db
+ * - Registro / Login con bcryptjs
+ * - /api/check-license, /api/descargar, /api/paypal, /api/support, /health
  */
+
+console.log('--- [STARTUP] Iniciando Backend ---');
+console.log('Node Version:', process.version);
+console.log('Platform:', process.platform);
+console.log('CWD:', process.cwd());
 
 const express = require('express');
 const cors = require('cors');
@@ -18,21 +23,36 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'grepobot_v2.db');
 
+console.log('Config:', { PORT, DB_PATH });
+
+// Global Error Handlers
+process.on('uncaughtException', (err) => {
+    console.error('!!! UNCAUGHT EXCEPTION:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('!!! UNHANDLED REJECTION:', reason);
+});
+
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname)));
 
 // Asegurar carpeta data
 const dataDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-    console.log('📁 Creada carpeta data:', dataDir);
+try {
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+        console.log('📁 Creada carpeta data:', dataDir);
+    }
+} catch (e) {
+    console.error('Error creando carpeta data:', e);
 }
 
 // Conectar DB
+console.log('Intentando conectar a SQLite...');
 const db = new sqlite3.Database(DB_PATH, (err) => {
     if (err) {
-        console.error('Error abriendo la BD:', err);
+        console.error('❌ Error abriendo la BD:', err);
         process.exit(1);
     }
     console.log('✅ SQLite listo en', DB_PATH);
@@ -40,6 +60,7 @@ const db = new sqlite3.Database(DB_PATH, (err) => {
 
 // Inicializar esquema
 db.serialize(() => {
+    console.log('Inicializando esquema de BD...');
     db.run(`CREATE TABLE IF NOT EXISTS usuarios (
     id INTEGER PRIMARY KEY,
     username TEXT UNIQUE,
@@ -50,7 +71,7 @@ db.serialize(() => {
     trial_used INTEGER DEFAULT 0,
     purchased INTEGER DEFAULT 0,
     created_at INTEGER
-  )`);
+  )`, (err) => { if (err) console.error('Error creando tabla usuarios:', err); });
 
     db.run(`CREATE TABLE IF NOT EXISTS logins (
     id INTEGER PRIMARY KEY,
@@ -58,7 +79,7 @@ db.serialize(() => {
     fecha INTEGER,
     ip TEXT,
     success INTEGER
-  )`);
+  )`, (err) => { if (err) console.error('Error creando tabla logins:', err); });
 
     db.run(`CREATE TABLE IF NOT EXISTS descargas (
     id INTEGER PRIMARY KEY,
@@ -66,7 +87,7 @@ db.serialize(() => {
     fecha INTEGER,
     ip TEXT,
     variant TEXT
-  )`);
+  )`, (err) => { if (err) console.error('Error creando tabla descargas:', err); });
 });
 
 // Helpers
@@ -111,13 +132,13 @@ app.get('/health', (req, res) => {
 });
 
 // Registro (POST)
-app.post('/api/registro', async (req, res) => {
+app.post('/api/registro', (req, res) => {
     try {
         const { username, password, email } = req.body || {};
         if (!username || !password || !email) return sendJson(res, { success: false, error: 'Faltan username, password o email' });
 
         const createdAt = nowMs();
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = bcrypt.hashSync(password, 10);
         const token = generateToken();
         const licenseExpires = nowMs() + daysToMs(7); // trial 7 días
 
@@ -152,14 +173,14 @@ app.post('/api/login', (req, res) => {
     const ip = getIp(req);
     if (!username || !password) return sendJson(res, { success: false, error: 'Faltan datos' });
 
-    db.get('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username], async (err, user) => {
+    db.get('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username], (err, user) => {
         if (err) { console.error(err); return sendJson(res, { success: false, error: 'Error BD' }); }
         if (!user) {
             db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [0, nowMs(), ip, 0]);
             return sendJson(res, { success: false, error: 'Usuario no encontrado' });
         }
 
-        const match = await bcrypt.compare(password, user.password_hash);
+        const match = bcrypt.compareSync(password, user.password_hash);
         db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [user.id, nowMs(), ip, match ? 1 : 0]);
 
         if (!match) return sendJson(res, { success: false, error: 'Contraseña incorrecta' });
@@ -287,7 +308,6 @@ app.post('/api/paypal/create-order', (req, res) => {
     const { planId } = req.body;
     const prices = { '1_MES': '7.99', '6_MESES': '45.00', '12_MESES': '80.00' };
     const price = prices[planId] || '7.99';
-    // En un entorno real, aquí llamarías a la API de PayPal para crear la orden
     sendJson(res, { id: 'ORDER-' + Date.now(), price });
 });
 
@@ -310,7 +330,7 @@ app.post('/api/paypal/capture-order', (req, res) => {
 });
 
 // Support AI
-app.post('/api/support', async (req, res) => {
+app.post('/api/support', (req, res) => {
     const { question } = req.body;
     if (!question) return res.status(400).json({ error: 'Falta pregunta' });
 
@@ -331,3 +351,13 @@ app.post('/api/support', async (req, res) => {
 });
 
 // Servir index
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+
+console.log('Intentando iniciar servidor en puerto', PORT, '...');
+app.listen(PORT, () => {
+    console.log(`\n✅ SERVIDOR LISTO EN PUERTO ${PORT}\n`);
+}).on('error', (err) => {
+    console.error('❌ Error al iniciar servidor:', err);
+});
+
+console.log('--- [STARTUP] Fin del script principal ---');
