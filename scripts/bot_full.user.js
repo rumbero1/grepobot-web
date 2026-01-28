@@ -17,32 +17,100 @@
     let DAYS_LEFT = 0;
 
     async function checkLicense() {
+        const CACHE_KEY = 'bot_license_cache';
+        const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 Horas de memoria
+
         if (typeof GREPOBOT_TOKEN === 'undefined') {
             alert("GrepoBot: Token no encontrado. Reinstala el bot desde el portal.");
             return false;
         }
+
+        // 1. Revisar Caché Local
         try {
-            const res = await fetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
-            const data = await res.json();
-            LICENSE_VALID = data.valid;
-            DAYS_LEFT = data.daysLeft;
-            if (!LICENSE_VALID) {
-                blockUI();
+            const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+            if (cached && cached.valid && (Date.now() - cached.timestamp < CACHE_DURATION)) {
+                console.log("✅ Licencia válida (Caché)");
+                LICENSE_VALID = true;
+                DAYS_LEFT = cached.daysLeft;
+                return true;
             }
-            return LICENSE_VALID;
-        } catch (e) {
-            console.error("Error validando licencia", e);
-            return false;
+        } catch (e) { console.error("Cache error", e); }
+
+        // 2. Intentar Red (con reintentos)
+        for (let i = 0; i < 3; i++) {
+            try {
+                const res = await fetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                const data = await res.json();
+
+                if (data.valid) {
+                    // Guardar en caché si es válido
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({
+                        valid: true,
+                        daysLeft: data.daysLeft,
+                        timestamp: Date.now()
+                    }));
+                    LICENSE_VALID = true;
+                    DAYS_LEFT = data.daysLeft;
+                    return true;
+                } else {
+                    // Expirado explícitamente por el servidor
+                    localStorage.removeItem(CACHE_KEY);
+                    LICENSE_VALID = false;
+                    blockUI('EXPIRED');
+                    return false;
+                }
+            } catch (e) {
+                console.warn(`Intento conexión ${i + 1}/3 fallido:`, e);
+                await new Promise(r => setTimeout(r, 2000)); // Esperar 2s
+            }
         }
+
+        // 3. Fallo total de red -> Usar caché de emergencia o bloquear con mensaje de red
+        // Si llegamos aquí es porque falló la conexión 3 veces.
+        // Intentamos ser benevolentes: Si había una caché válida (aunque antigua), la aceptamos
+        // temporalmente para no bloquear por caída de servidor.
+        try {
+            const cached = JSON.parse(localStorage.getItem(CACHE_KEY));
+            if (cached && cached.valid) {
+                console.warn("⚠️ Servidor caído. Usando última licencia conocida.");
+                LICENSE_VALID = true;
+                return true;
+            }
+        } catch (e) { }
+
+        // Si no hay nada, bloqueamos por error de red
+        console.error("❌ Fallo crítico de conexión con servidor de licencias.");
+        blockUI('NETWORK');
+        return false;
     }
 
-    function blockUI() {
+    function blockUI(reason) {
+        if (document.getElementById('bot-block-overlay')) return;
+
         const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:100000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:Arial;text-align:center;';
+        overlay.id = 'bot-block-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.95);z-index:100000;display:flex;flex-direction:column;justify-content:center;align-items:center;color:white;font-family:Arial;text-align:center;';
+
+        let title, msg, btnText, btnLink;
+
+        if (reason === 'NETWORK') {
+            title = '⚠️ SIN CONEXIÓN';
+            msg = 'No puedo conectar con el servidor del Bot.<br>Tu licencia podría estar bien, pero el servidor no responde.<br>Intenta recargar en unos minutos.';
+            btnText = 'REINTENTAR';
+            btnLink = '#';
+        } else {
+            title = '⚔️ LICENCIA EXPIRADA';
+            msg = 'Tu tiempo de gloria ha terminado.<br>Renueva tu suscripción para seguir dominando.';
+            btnText = 'RENOVAR AHORA';
+            btnLink = 'https://grepobot-web.onrender.com';
+        }
+
         overlay.innerHTML = `
-            <h1 style="color:#ff5252;font-size:40px;margin-bottom:20px;">⚔️ LICENCIA EXPIRADA</h1>
-            <p style="font-size:18px;margin-bottom:30px;">Tu tiempo de gloria ha terminado. Renueva tu suscripción para seguir dominando.</p>
-            <a href="https://grepobot-web.onrender.com" target="_blank" style="padding:15px 30px;background:#4caf50;color:white;text-decoration:none;border-radius:50px;font-weight:bold;font-size:20px;">RENOVAR AHORA</a>
+            <h1 style="color:${reason === 'NETWORK' ? '#ff9800' : '#ff5252'};font-size:40px;margin-bottom:20px;">${title}</h1>
+            <p style="font-size:18px;margin-bottom:30px;line-height:1.5;">${msg}</p>
+            <a href="${btnLink}" ${reason === 'NETWORK' ? 'onclick="location.reload()"' : 'target="_blank"'} style="padding:15px 30px;background:${reason === 'NETWORK' ? '#2196f3' : '#4caf50'};color:white;text-decoration:none;border-radius:50px;font-weight:bold;font-size:20px;cursor:pointer;">${btnText}</a>
         `;
         document.body.appendChild(overlay);
     }
