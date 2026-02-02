@@ -1,6 +1,6 @@
 /**
- * backend.js - VERSIÓN PREMIUM FINAL (CORREGIDA)
- * Servidor Express optimizado para Render con SQLite, Registro, PayPal y Soporte IA.
+ * backend.js - VERSIÓN PREMIUM FINAL (CORREGIDA - MULTI DB)
+ * Servidor Express optimizado para Render con soporte Híbrido (SQLite/PostgreSQL).
  */
 
 console.log('--- [STARTUP] Iniciando Backend Premium ---');
@@ -9,6 +9,7 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
@@ -16,6 +17,7 @@ const bcrypt = require('bcryptjs');
 const app = express();
 const PORT = process.env.PORT || 10000;
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'data', 'grepobot_v2.db');
+const DATABASE_URL = process.env.DATABASE_URL; // Si existe, usa Postgres
 
 // --- MIDDLEWARES ---
 app.use(cors());
@@ -29,46 +31,129 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 process.on('uncaughtException', (err) => console.error('!!! UNCAUGHT EXCEPTION:', err));
 process.on('unhandledRejection', (reason) => console.error('!!! UNHANDLED REJECTION:', reason));
 
-// --- DATABASE SETUP ---
-const dataDir = path.dirname(DB_PATH);
-if (!fs.existsSync(dataDir)) {
-    try {
-        fs.mkdirSync(dataDir, { recursive: true });
-        console.log('📁 Creada carpeta data:', dataDir);
-    } catch (e) {
-        console.error('Error creando carpeta data:', e);
+// --- DATABASE ADAPTER ---
+class DatabaseAdapter {
+    constructor() {
+        this.type = DATABASE_URL ? 'postgres' : 'sqlite';
+        this.client = null;
+    }
+
+    async connect() {
+        if (this.type === 'postgres') {
+            console.log('🐘 Conectando a PostgreSQL...');
+            this.client = new Pool({
+                connectionString: DATABASE_URL,
+                ssl: { rejectUnauthorized: false }
+            });
+            // Test connection
+            try {
+                const res = await this.client.query('SELECT NOW()');
+                console.log('✅ PostgreSQL conectado:', res.rows[0].now);
+                await this.initializeSchema();
+            } catch (err) {
+                console.error('❌ Error conectando a Postgres:', err);
+                process.exit(1);
+            }
+        } else {
+            console.log('💾 Usando SQLite local...');
+            const dataDir = path.dirname(DB_PATH);
+            if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+
+            this.client = new sqlite3.Database(DB_PATH, (err) => {
+                if (err) console.error('❌ Error abriendo SQLite:', err);
+                else {
+                    console.log('✅ SQLite listo en', DB_PATH);
+                    this.initializeSchema();
+                }
+            });
+        }
+    }
+
+    async run(sql, params = []) {
+        if (this.type === 'postgres') {
+            // Convert ? to $1, $2, etc.
+            let i = 1;
+            const pgSql = sql.replace(/\?/g, () => `$${i++}`);
+
+            // Special handling for INSERT RETURNING ID
+            if (pgSql.trim().toUpperCase().startsWith('INSERT')) {
+                const res = await this.client.query(pgSql + ' RETURNING id', params);
+                return { lastID: res.rows[0]?.id };
+            } else {
+                await this.client.query(pgSql, params);
+                return {};
+            }
+        } else {
+            return new Promise((resolve, reject) => {
+                this.client.run(sql, params, function (err) {
+                    if (err) reject(err);
+                    else resolve({ lastID: this.lastID, changes: this.changes });
+                });
+            });
+        }
+    }
+
+    async get(sql, params = []) {
+        if (this.type === 'postgres') {
+            let i = 1;
+            const pgSql = sql.replace(/\?/g, () => `$${i++}`);
+            const res = await this.client.query(pgSql, params);
+            return res.rows[0];
+        } else {
+            return new Promise((resolve, reject) => {
+                this.client.get(sql, params, (err, row) => {
+                    if (err) reject(err);
+                    else resolve(row);
+                });
+            });
+        }
+    }
+
+    async all(sql, params = []) {
+        if (this.type === 'postgres') {
+            let i = 1;
+            const pgSql = sql.replace(/\?/g, () => `$${i++}`);
+            const res = await this.client.query(pgSql, params);
+            return res.rows;
+        } else {
+            return new Promise((resolve, reject) => {
+                this.client.all(sql, params, (err, rows) => {
+                    if (err) reject(err);
+                    else resolve(rows);
+                });
+            });
+        }
+    }
+
+    async initializeSchema() {
+        const idType = this.type === 'postgres' ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY';
+        const tables = [
+            `CREATE TABLE IF NOT EXISTS usuarios (
+                id ${idType},
+                username TEXT UNIQUE,
+                email TEXT UNIQUE,
+                password_hash TEXT,
+                token TEXT UNIQUE,
+                license_expires_at BIGINT DEFAULT 0,
+                trial_used INTEGER DEFAULT 0,
+                purchased INTEGER DEFAULT 0,
+                created_at BIGINT
+            )`,
+            `CREATE TABLE IF NOT EXISTS logins (id ${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, success INTEGER)`,
+            `CREATE TABLE IF NOT EXISTS descargas (id ${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, variant TEXT)`,
+            `CREATE TABLE IF NOT EXISTS visitas (id ${idType}, fecha BIGINT, ip TEXT, user_agent TEXT, referrer TEXT)`,
+            `CREATE TABLE IF NOT EXISTS actividad (id ${idType}, usuario_id INTEGER, fecha BIGINT, accion TEXT, detalles TEXT)`
+        ];
+
+        for (const sql of tables) {
+            await this.run(sql);
+        }
+        console.log('✅ Esquema de BD verificado/inicializado');
     }
 }
 
-const db = new sqlite3.Database(DB_PATH, (err) => {
-    if (err) {
-        console.error('❌ Error abriendo la BD:', err);
-    } else {
-        console.log('✅ SQLite listo en', DB_PATH);
-        initializeSchema();
-    }
-});
-
-function initializeSchema() {
-    db.serialize(() => {
-        db.run(`CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            password_hash TEXT,
-            token TEXT UNIQUE,
-            license_expires_at INTEGER DEFAULT 0,
-            trial_used INTEGER DEFAULT 0,
-            purchased INTEGER DEFAULT 0,
-            created_at INTEGER
-        )`);
-        db.run(`CREATE TABLE IF NOT EXISTS logins (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, ip TEXT, success INTEGER)`);
-        db.run(`CREATE TABLE IF NOT EXISTS descargas (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, ip TEXT, variant TEXT)`);
-        db.run(`CREATE TABLE IF NOT EXISTS visitas (id INTEGER PRIMARY KEY, fecha INTEGER, ip TEXT, user_agent TEXT, referrer TEXT)`);
-        db.run(`CREATE TABLE IF NOT EXISTS actividad (id INTEGER PRIMARY KEY, usuario_id INTEGER, fecha INTEGER, accion TEXT, detalles TEXT)`);
-        console.log('✅ Esquema de BD inicializado');
-    });
-}
+const db = new DatabaseAdapter();
+db.connect();
 
 // --- HELPERS ---
 const nowMs = () => Date.now();
@@ -76,21 +161,16 @@ const daysToMs = (days) => days * 24 * 60 * 60 * 1000;
 const generateToken = () => require('crypto').randomBytes(16).toString('hex');
 const sendJson = (res, obj) => { res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.json(obj); };
 
-const getUserByToken = (token) => {
-    return new Promise((resolve, reject) => {
-        if (!token) return resolve(null);
-        db.get('SELECT * FROM usuarios WHERE token = ?', [token], (err, row) => {
-            if (err) return reject(err);
-            resolve(row || null);
-        });
-    });
+const getUserByToken = async (token) => {
+    if (!token) return null;
+    return await db.get('SELECT * FROM usuarios WHERE token = ?', [token]);
 };
 
 // --- ENDPOINTS ---
 
-app.get('/health', (req, res) => sendJson(res, { status: 'ok', now: nowMs() }));
+app.get('/health', (req, res) => sendJson(res, { status: 'ok', now: nowMs(), db: db.type }));
 
-app.post('/api/registro', (req, res) => {
+app.post('/api/registro', async (req, res) => {
     const { username, password, email } = req.body || {};
     if (!username || !password || !email) return sendJson(res, { success: false, error: 'Faltan datos' });
 
@@ -98,52 +178,74 @@ app.post('/api/registro', (req, res) => {
     const token = generateToken();
     const licenseExpires = nowMs() + daysToMs(7);
 
-    db.run('INSERT INTO usuarios (username, email, password_hash, token, license_expires_at, created_at) VALUES (?,?,?,?,?,?)',
-        [username, email, passwordHash, token, licenseExpires, nowMs()],
-        function (err) {
-            if (err) {
-                const field = err.message.includes('username') ? 'Usuario' : 'Email';
-                return sendJson(res, { success: false, error: `${field} ya registrado` });
-            }
-            sendJson(res, { success: true, usuarioId: this.lastID, username, token, daysLeft: 7 });
-        });
+    try {
+        // En Postgres 'returning id' se maneja dentro de db.run
+        const result = await db.run(
+            'INSERT INTO usuarios (username, email, password_hash, token, license_expires_at, created_at) VALUES (?,?,?,?,?,?)',
+            [username, email, passwordHash, token, licenseExpires, nowMs()]
+        );
+        sendJson(res, { success: true, usuarioId: result.lastID, username, token, daysLeft: 7 });
+    } catch (err) {
+        const msg = err.message || '';
+        const field = msg.includes('username') ? 'Usuario' : 'Email';
+        sendJson(res, { success: false, error: `${field} ya registrado` });
+    }
 });
 
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body || {};
     if (!username || !password) return sendJson(res, { success: false, error: 'Faltan datos' });
 
-    db.get('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username], (err, user) => {
-        if (!user || !bcrypt.compareSync(password, user.password_hash)) {
-            return sendJson(res, { success: false, error: 'Credenciales inválidas' });
-        }
-        const daysLeft = Math.max(0, Math.ceil((user.license_expires_at - nowMs()) / (24 * 3600 * 1000)));
+    const user = await db.get('SELECT * FROM usuarios WHERE username = ? OR email = ?', [username, username]);
 
-        // Log login
-        const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-        db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [user.id, nowMs(), ip, 1]);
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+        return sendJson(res, { success: false, error: 'Credenciales inválidas' });
+    }
 
-        sendJson(res, { success: true, usuarioId: user.id, username: user.username, token: user.token, daysLeft });
-    });
+    // Casting seguro para fechas (BIGINT puede venir como string en Postgres)
+    const expires = Number(user.license_expires_at);
+    const userId = Number(user.id);
+
+    const daysLeft = Math.max(0, Math.ceil((expires - nowMs()) / (24 * 3600 * 1000)));
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    await db.run('INSERT INTO logins (usuario_id, fecha, ip, success) VALUES (?,?,?,?)', [userId, nowMs(), ip, 1]);
+
+    sendJson(res, { success: true, usuarioId: userId, username: user.username, token: user.token, daysLeft });
 });
 
 app.get('/api/check-license', async (req, res) => {
     const token = req.query.token;
-    if (!token) return sendJson(res, { valid: false, error: 'Token requerido' });
+    if (!token) return sendJson(res, { valid: false, error: 'Token requerido', reason: 'NO_TOKEN' });
 
     const user = await getUserByToken(token);
-    if (!user) return sendJson(res, { valid: false, error: 'Token inválido' });
+    if (!user) return sendJson(res, { valid: false, error: 'Token inválido', reason: 'INVALID_TOKEN' });
 
-    const leftMs = user.license_expires_at - nowMs();
+    const expires = Number(user.license_expires_at);
+    const leftMs = expires - nowMs();
     const daysLeft = Math.max(0, Math.ceil(leftMs / (24 * 3600 * 1000)));
 
-    // Seguridad: El bot debe recibir 'valid: true' para funcionar
     sendJson(res, {
         valid: leftMs > 0,
         daysLeft,
         username: user.username,
-        status: leftMs > 0 ? 'ACTIVA' : 'EXPIRADA'
+        status: leftMs > 0 ? 'ACTIVA' : 'EXPIRADA',
+        reason: leftMs > 0 ? 'ACTIVE' : 'EXPIRED'
     });
+});
+
+app.post('/api/validate-download', async (req, res) => {
+    const { token, email } = req.body;
+    if (!token || !email) return sendJson(res, { success: false, error: 'Datos incompletos' });
+
+    const user = await getUserByToken(token);
+    if (!user) return sendJson(res, { success: false, error: 'Token inválido' });
+
+    if (user.email.toLowerCase().trim() !== email.toLowerCase().trim()) {
+        return sendJson(res, { success: false, error: 'El correo no coincide con tu cuenta.' });
+    }
+
+    sendJson(res, { success: true });
 });
 
 app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req, res) => {
@@ -159,9 +261,8 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
     let code = fs.readFileSync(filePath, 'utf8');
     const injection = `/* LICENSE INJECTION */ const GREPOBOT_TOKEN = "${token}";\n`;
 
-    // Log descarga
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, nowMs(), ip, variant]);
+    await db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, nowMs(), ip, variant]);
 
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Content-Disposition', 'attachment; filename="GrepoBot.user.js"');
@@ -169,22 +270,19 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
 });
 
 // Endpoint de captura de orden (PayPal Client-side flow)
-app.post('/api/paypal/capture-order', (req, res) => {
+app.post('/api/paypal/capture-order', async (req, res) => {
     const { usuarioId, planId } = req.body;
     const daysMap = { '1_MES': 30, '6_MESES': 180, '12_MESES': 365 };
     const days = daysMap[planId] || 30;
 
-    db.get('SELECT license_expires_at FROM usuarios WHERE id = ?', [usuarioId], (err, user) => {
-        if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+    const user = await db.get('SELECT license_expires_at FROM usuarios WHERE id = ?', [usuarioId]);
+    if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
 
-        const currentExpires = Math.max(nowMs(), user.license_expires_at);
-        const newExpires = currentExpires + daysToMs(days);
+    const currentExpires = Math.max(nowMs(), Number(user.license_expires_at));
+    const newExpires = currentExpires + daysToMs(days);
 
-        db.run('UPDATE usuarios SET purchased = 1, license_expires_at = ? WHERE id = ?', [newExpires, usuarioId], function (err) {
-            if (err) return res.status(500).json({ error: 'Error DB' });
-            sendJson(res, { success: true, message: 'Licencia renovada', daysAdded: days });
-        });
-    });
+    await db.run('UPDATE usuarios SET purchased = 1, license_expires_at = ? WHERE id = ?', [newExpires, usuarioId]);
+    sendJson(res, { success: true, message: 'Licencia renovada', daysAdded: days });
 });
 
 app.post('/api/support', (req, res) => {
@@ -206,11 +304,11 @@ app.post('/api/support', (req, res) => {
 
 // --- NUEVOS ENDPOINTS DE MONITOREO ---
 
-app.post('/api/log-visit', (req, res) => {
+app.post('/api/log-visit', async (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
     const referrer = req.body.referrer || '';
-    db.run('INSERT INTO visitas (fecha, ip, user_agent, referrer) VALUES (?,?,?,?)', [nowMs(), ip, userAgent, referrer]);
+    await db.run('INSERT INTO visitas (fecha, ip, user_agent, referrer) VALUES (?,?,?,?)', [nowMs(), ip, userAgent, referrer]);
     res.sendStatus(204);
 });
 
@@ -218,56 +316,56 @@ app.post('/api/log-action', async (req, res) => {
     const { token, accion, detalles } = req.body;
     const user = await getUserByToken(token);
     const userId = user ? user.id : null;
-    db.run('INSERT INTO actividad (usuario_id, fecha, accion, detalles) VALUES (?,?,?,?)', [userId, nowMs(), accion, detalles]);
+    await db.run('INSERT INTO actividad (usuario_id, fecha, accion, detalles) VALUES (?,?,?,?)', [userId, nowMs(), accion, detalles]);
     res.sendStatus(204);
 });
 
-app.get('/api/admin/stats', (req, res) => {
+app.get('/api/admin/stats', async (req, res) => {
+    // Si no es admin real, podría protegerse mejor.
     const stats = {};
-    const queries = [
-        { key: 'totalUsuarios', sql: 'SELECT COUNT(*) as count FROM usuarios' },
-        { key: 'totalDescargas', sql: 'SELECT COUNT(*) as count FROM descargas' },
-        { key: 'licenciasActivas', sql: 'SELECT COUNT(*) as count FROM usuarios WHERE license_expires_at > ?', params: [nowMs()] },
-        { key: 'logins24h', sql: 'SELECT COUNT(*) as count FROM logins WHERE fecha > ?', params: [nowMs() - daysToMs(1)] },
-        { key: 'logins', sql: 'SELECT l.*, u.username FROM logins l JOIN usuarios u ON l.usuario_id = u.id ORDER BY l.fecha DESC LIMIT 20' },
-        { key: 'descargas', sql: 'SELECT d.*, u.username, u.license_expires_at FROM descargas d JOIN usuarios u ON d.usuario_id = u.id ORDER BY d.fecha DESC LIMIT 20' },
-        { key: 'usuarios', sql: 'SELECT id, username, created_at as fecha_registro, license_expires_at as fecha_expiracion FROM usuarios ORDER BY created_at DESC' },
-        { key: 'actividad', sql: 'SELECT a.*, u.username FROM actividad a LEFT JOIN usuarios u ON a.usuario_id = u.id ORDER BY a.fecha DESC LIMIT 50' },
-        { key: 'visitas', sql: 'SELECT * FROM visitas ORDER BY fecha DESC LIMIT 50' }
-    ];
 
-    let completed = 0;
-    queries.forEach(q => {
-        const callback = (err, rows) => {
-            if (err) {
-                console.error(`Error en query ${q.key}:`, err);
-                stats[q.key] = [];
-            } else {
-                if (q.sql.includes('COUNT(*)')) {
-                    stats[q.key] = rows[0].count;
-                } else {
-                    // Post-procesar para añadir días restantes
-                    if (q.key === 'descargas' || q.key === 'usuarios') {
-                        rows.forEach(r => {
-                            const exp = r.fecha_expiracion || r.license_expires_at;
-                            r.diasRestantes = Math.max(0, Math.ceil((exp - nowMs()) / (24 * 3600 * 1000)));
-                        });
-                    }
-                    stats[q.key] = rows;
-                }
-            }
-            completed++;
-            if (completed === queries.length) {
-                sendJson(res, stats);
-            }
-        };
+    // Queries seguras para PG y SQLite
+    // En PG 'license_expires_at > ?' funciona bien.
 
-        if (q.sql.includes('COUNT(*)')) {
-            db.all(q.sql, q.params || [], callback);
-        } else {
-            db.all(q.sql, q.params || [], callback);
-        }
-    });
+    try {
+        const qUsers = await db.all('SELECT COUNT(*) as count FROM usuarios');
+        stats.totalUsuarios = qUsers[0].count;
+
+        const qDownloads = await db.all('SELECT COUNT(*) as count FROM descargas');
+        stats.totalDescargas = qDownloads[0].count;
+
+        const qActive = await db.all('SELECT COUNT(*) as count FROM usuarios WHERE license_expires_at > ?', [nowMs()]);
+        stats.licenciasActivas = qActive[0].count;
+
+        const qLogins24 = await db.all('SELECT COUNT(*) as count FROM logins WHERE fecha > ?', [nowMs() - daysToMs(1)]);
+        stats.logins24h = qLogins24[0].count;
+
+        // Para joins, SQLite y PG difieren ligeramente a veces, pero los JOINs simples son standard.
+        // Cuidado con la ambigüedad de 'id'.
+
+        const qLogins = await db.all('SELECT l.*, u.username FROM logins l JOIN usuarios u ON l.usuario_id = u.id ORDER BY l.fecha DESC LIMIT 20');
+        stats.logins = qLogins;
+
+        const qDescargas = await db.all('SELECT d.*, u.username, u.license_expires_at FROM descargas d JOIN usuarios u ON d.usuario_id = u.id ORDER BY d.fecha DESC LIMIT 20');
+        stats.descargas = qDescargas.map(r => ({
+            ...r,
+            diasRestantes: Math.max(0, Math.ceil((Number(r.license_expires_at) - nowMs()) / (24 * 3600 * 1000)))
+        }));
+
+        const qUsuarios = await db.all('SELECT id, username, created_at, license_expires_at FROM usuarios ORDER BY created_at DESC');
+        stats.usuarios = qUsuarios.map(r => ({
+            ...r,
+            diasRestantes: Math.max(0, Math.ceil((Number(r.license_expires_at) - nowMs()) / (24 * 3600 * 1000)))
+        }));
+
+        stats.actividad = await db.all('SELECT a.*, u.username FROM actividad a LEFT JOIN usuarios u ON a.usuario_id = u.id ORDER BY a.fecha DESC LIMIT 50');
+        stats.visitas = await db.all('SELECT * FROM visitas ORDER BY fecha DESC LIMIT 50');
+
+        sendJson(res, stats);
+    } catch (e) {
+        console.error("Error stats:", e);
+        sendJson(res, { error: 'Error obteniendo stats' });
+    }
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
@@ -275,6 +373,7 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 // --- START SERVER ---
 app.listen(PORT, () => {
     console.log(`\n🚀 SERVIDOR PREMIUM CORRIENDO EN PUERTO ${PORT}\n`);
+    console.log(`   MODO DB: ${db.type.toUpperCase()}`);
 });
 
-// FIN DEL ARCHIVO - VERIFICACIÓN DE CIERRE COMPLETA
+// FIN
