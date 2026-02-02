@@ -55,10 +55,18 @@
                     DAYS_LEFT = data.daysLeft;
                     return true;
                 } else {
-                    // Expirado explícitamente por el servidor
+                    // Expirado o Inválido
                     localStorage.removeItem(CACHE_KEY);
                     LICENSE_VALID = false;
-                    blockUI('EXPIRED');
+
+                    if (data.reason === 'INVALID_TOKEN' || data.reason === 'NO_TOKEN') {
+                        // Token inválido (posible reinicio de BD o hack)
+                        alert("⚠️ ERROR DE SESIÓN DE GREPOBOT ⚠️\n\nTu token no es reconocido por el servidor.\nEsto suele pasar si el servidor se reinició o tu cuenta fue borrada.\n\nSOLUCIÓN: Ve al portal y REINSTALA el script desde tu cuenta.");
+                        blockUI('INVALID'); // Nuevo tipo de bloqueo
+                    } else {
+                        // Expirado legítimamente
+                        blockUI('EXPIRED');
+                    }
                     return false;
                 }
             } catch (e) {
