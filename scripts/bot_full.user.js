@@ -971,6 +971,11 @@
     }
 
     function iniciarProceso() {
+        if (!LICENSE_VALID) {
+            alert("❌ LICENCIA EXPIRADA - No puedes iniciar el bot.");
+            blockUI('EXPIRED');
+            return;
+        }
         botActivo = true;
         document.getElementById('progress-container').style.display = 'block';
         playBeep(600, 100);
