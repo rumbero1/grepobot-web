@@ -129,7 +129,7 @@ class DatabaseAdapter {
         const idType = this.type === 'postgres' ? 'SERIAL PRIMARY KEY' : 'INTEGER PRIMARY KEY';
         const tables = [
             `CREATE TABLE IF NOT EXISTS usuarios (
-                id ${idType},
+                id \${idType},
                 username TEXT UNIQUE,
                 email TEXT UNIQUE,
                 password_hash TEXT,
@@ -139,10 +139,10 @@ class DatabaseAdapter {
                 purchased INTEGER DEFAULT 0,
                 created_at BIGINT
             )`,
-            `CREATE TABLE IF NOT EXISTS logins (id ${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, success INTEGER)`,
-            `CREATE TABLE IF NOT EXISTS descargas (id ${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, variant TEXT)`,
-            `CREATE TABLE IF NOT EXISTS visitas (id ${idType}, fecha BIGINT, ip TEXT, user_agent TEXT, referrer TEXT)`,
-            `CREATE TABLE IF NOT EXISTS actividad (id ${idType}, usuario_id INTEGER, fecha BIGINT, accion TEXT, detalles TEXT)`
+            `CREATE TABLE IF NOT EXISTS logins (id \${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, success INTEGER)`,
+            `CREATE TABLE IF NOT EXISTS descargas (id \${idType}, usuario_id INTEGER, fecha BIGINT, ip TEXT, variant TEXT)`,
+            `CREATE TABLE IF NOT EXISTS visitas (id \${idType}, fecha BIGINT, ip TEXT, user_agent TEXT, referrer TEXT)`,
+            `CREATE TABLE IF NOT EXISTS actividad (id \${idType}, usuario_id INTEGER, fecha BIGINT, accion TEXT, detalles TEXT)`
         ];
 
         for (const sql of tables) {
@@ -188,7 +188,7 @@ app.post('/api/registro', async (req, res) => {
     } catch (err) {
         const msg = err.message || '';
         const field = msg.includes('username') ? 'Usuario' : 'Email';
-        sendJson(res, { success: false, error: `${field} ya registrado` });
+        sendJson(res, { success: false, error: \`\${field} ya registrado\` });
     }
 });
 
@@ -259,7 +259,7 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
     if (!fs.existsSync(filePath)) return res.status(404).send('Script no encontrado');
 
     let code = fs.readFileSync(filePath, 'utf8');
-    const injection = `/* LICENSE INJECTION */ const GREPOBOT_TOKEN = "${token}";\n`;
+    const injection = \`/* LICENSE INJECTION */ const GREPOBOT_TOKEN = "\${token}";\\n\`;
 
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     await db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, nowMs(), ip, variant]);
@@ -372,8 +372,8 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // --- START SERVER ---
 app.listen(PORT, () => {
-    console.log(`\n🚀 SERVIDOR PREMIUM CORRIENDO EN PUERTO ${PORT}\n`);
-    console.log(`   MODO DB: ${db.type.toUpperCase()}`);
+    console.log(\`\\n🚀 SERVIDOR PREMIUM CORRIENDO EN PUERTO \${PORT}\\n\`);
+    console.log(\`   MODO DB: \${db.type.toUpperCase()}\`);
 });
 
 // FIN
