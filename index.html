@@ -1,4 +1,4 @@
-        <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -679,7 +679,10 @@
             <a href="#manual">Guía</a>
             <a href="#gallery">Galería</a>
             <a href="#portal">Dashboard</a>
-            <a href="#portal" style="color: var(--gold)">Premium</a>
+            <a href="#" onclick="setMode('login'); scrollToPortal()">Entrar</a>
+            <a href="https://dynamic-shorts.lovable.app/#features" target="_blank"
+                style="color: var(--gold); border: 1px solid var(--gold); padding: 5px 15px; border-radius: 20px;">✨ Ver
+                Demo Visual</a>
         </div>
     </nav>
 
@@ -695,34 +698,71 @@
     </section>
 
     <section id="manual" class="guide-section">
-        <h2 class="section-title">Manual de Operaciones</h2>
+        <h2 class="section-title">Manual de Operaciones Estratégicas</h2>
         <div class="manual-container">
+            <!-- Regla de Oro -->
+            <div class="glass-card"
+                style="margin-bottom: 50px; border-left: 5px solid var(--gold); background: rgba(255, 215, 0, 0.05);">
+                <h3 style="color: var(--gold); margin-bottom: 10px;">🛡️ Regla de Oro: El Sistema de Verificación</h3>
+                <p>Para que el bot funcione, siempre debes seguir este flujo en cada módulo:
+                    <br><b>1. Abrir la ventana en el juego</b> -> <b>2. Pulsar el Ojo (👁️) para verificar</b> -> <b>3.
+                        Pulsar Inicio</b>.
+                </p>
+            </div>
+
+            <!-- Módulo: Planner -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>1. El Planificador Maestro</h3>
-                    <p>Abre la ventana de <strong>Ataques Entrantes</strong> en Grepolis. Pulsa el botón "Capturar" en
-                        el bot. El bot leerá todos los ataques y te permitirá programar refuerzos o ataques para que
-                        lleguen en el segundo exacto.</p>
+                    <h3>1. Programador de Ataques (Planner)</h3>
+                    <p>Ideal para cuadrar refuerzos al segundo exacto.
+                        <br>• Abre la ventana de <b>Ataques Entrantes</b> en Grepolis.
+                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña Planner del bot.
+                        <br>• Cuando salga el check verde, dale a <b>Inicio</b>.
+                        <br>• El bot capturará los tiempos y enviará las tropas automáticamente.
+                    </p>
                 </div>
                 <div class="manual-img"><img src="assets/gallery/planner.png" alt="Planner"></div>
             </div>
+
+            <!-- Módulo: AutoDodge -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>2. El "Ojo" de Verificación</h3>
-                    <p>Cada sección tiene un botón con un icono de <strong>Ojo (👁️)</strong>. Úsalo para que el bot
-                        verifique si puede ver la ventana necesaria (Senado, Cuartel, etc.). Si el botón se pone verde,
-                        el bot está listo para actuar.</p>
+                    <h3>2. Auto-Dodge (Esquiva Automática)</h3>
+                    <p>Salva tus tropas de ataques enemigos mientras duermes.
+                        <br>• Abre la ventana de <b>Tropas de la Ciudad</b> o el Cuartel.
+                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña Dodge.
+                        <br>• Pulsa <b>Inicio</b>. El bot sacará las tropas justo antes del impacto y las traerá de
+                        vuelta un segundo después.
+                    </p>
                 </div>
-                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Ojo"></div>
+                <div class="manual-img"><img src="assets/bot_preview.png" alt="Dodge"></div>
             </div>
+
+            <!-- Módulo: Cueva -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>3. Mantener Ventanas Abiertas</h3>
-                    <p>Para que el <strong>Planner</strong> envíe ataques automáticamente, la ventana del planificador
-                        de Grepolis debe estar abierta. El bot simula tus clics, por lo que necesita ver los elementos
-                        en pantalla.</p>
+                    <h3>3. Gestión de Plata (Cueva)</h3>
+                    <p>Protege tus recursos de espías enemigos.
+                        <br>• Abre la <b>Vista General de Cuevas</b> (donde salen todas tus ciudades).
+                        <br>• Pulsa el <b>Ojo (👁️)</b> en el módulo de Cueva.
+                        <br>• Pulsa <b>Inicio</b>. El bot guardará la plata automáticamente según tu configuración.
+                    </p>
                 </div>
-                <div class="manual-img"><img src="assets/bot_preview.png" alt="Ventanas"></div>
+                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Cueva"></div>
+            </div>
+
+            <!-- Módulo: Construcción y Tropas -->
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>4. Reclutamiento y Edificios</h3>
+                    <p>Mantén tu imperio creciendo 24/7.
+                        <br>• Abre el <b>Senado</b> (para edificios) o <b>Cuartel/Puerto</b> (para tropas).
+                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña correspondiente.
+                        <br>• Pulsa <b>Inicio</b>. El bot gestionará las colas de construcción y reclutamiento siempre
+                        que tengas recursos.
+                    </p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/autobuild.png" alt="Construccion"></div>
             </div>
         </div>
     </section>
@@ -795,57 +835,60 @@
                 </div>
                 <button id="btn-main" class="cta-button" style="width:100%" onclick="acceder()">Entrar al
                     Portal</button>
+                <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 15px;">
+                    ⚠️ Si tenías cuenta antes del 13 de Febrero, por favor <b>regístrate de nuevo</b> (Base de datos
+                    actualizada).</p>
                 <div id="msg-login" class="alert"></div>
             </div>
 
             <div id="dashboard" style="display:none;">
-                <div class="portal-container">
-                    <div>
-                        <h2 style="color:var(--primary); margin-bottom:10px;">Comandante <span id="user-display"></span>
-                        </h2>
-                        <div id="status-licencia" class="alert success" style="display:block; margin-bottom:30px;">
-                            Cargando estado...</div>
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                    <h2 style="color:var(--primary);">Comandante <span id="user-display"></span></h2>
+                    <button onclick="cerrarSesion()"
+                        style="background: none; border: 1px solid #444; color: #888; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">Cerrar
+                        Sesión</button>
+                </div>
+                <div id="status-licencia" class="alert success" style="display:block; margin-bottom:30px;">
+                    Cargando estado...</div>
 
-                        <h3 style="margin-bottom:15px; font-size:18px;">Instalación</h3>
-                        <div style="display:flex; flex-direction:column; gap:10px;">
-                            <button class="cta-button"
-                                style="background:#2196F3; box-shadow: 0 0 15px rgba(33,150,243,0.4)"
-                                onclick="descargarBot('tampermonkey')">📥 Instalar en Tampermonkey</button>
-                            <button class="cta-button"
-                                style="background:#444; box-shadow:none; font-size:14px; padding:12px;"
-                                onclick="descargarBot('direct')">💾 Descargar .js</button>
-                        </div>
-                    </div>
-
-                    <div style="border-left: 1px solid var(--glass-border); padding-left: 40px;">
-                        <h3 style="color:var(--gold); margin-bottom:20px;">💎 Renovar Licencia</h3>
-                        <div class="plans-container">
-                            <div class="plan-card selected" onclick="selectPlan('1_MES', this)">
-                                <div class="plan-info">
-                                    <span class="name">1 Mes</span>
-                                    <span class="desc">Acceso completo</span>
-                                </div>
-                                <span class="plan-price">$7.99</span>
-                            </div>
-                            <div class="plan-card" onclick="selectPlan('6_MESES', this)">
-                                <div class="plan-info">
-                                    <span class="name">6 Meses</span>
-                                    <span class="desc">Ahorra 10%</span>
-                                </div>
-                                <span class="plan-price">$45.00</span>
-                            </div>
-                            <div class="plan-card" onclick="selectPlan('12_MESES', this)">
-                                <div class="plan-info">
-                                    <span class="name">1 Año</span>
-                                    <span class="desc">Ahorra 20%</span>
-                                </div>
-                                <span class="plan-price">$80.00</span>
-                            </div>
-                        </div>
-                        <div id="paypal-button-container"></div>
-                    </div>
+                <h3 style="margin-bottom:15px; font-size:18px;">Instalación</h3>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button class="cta-button" style="background:#2196F3; box-shadow: 0 0 15px rgba(33,150,243,0.4)"
+                        onclick="descargarBot('tampermonkey')">📥 Instalar en Tampermonkey</button>
+                    <button class="cta-button" style="background:#444; box-shadow:none; font-size:14px; padding:12px;"
+                        onclick="descargarBot('direct')">💾 Descargar .js</button>
                 </div>
             </div>
+
+            <div style="border-left: 1px solid var(--glass-border); padding-left: 40px;">
+                <h3 style="color:var(--gold); margin-bottom:20px;">💎 Renovar Licencia</h3>
+                <div class="plans-container">
+                    <div class="plan-card selected" onclick="selectPlan('1_MES', this)">
+                        <div class="plan-info">
+                            <span class="name">1 Mes</span>
+                            <span class="desc">Acceso completo</span>
+                        </div>
+                        <span class="plan-price">$7.99</span>
+                    </div>
+                    <div class="plan-card" onclick="selectPlan('6_MESES', this)">
+                        <div class="plan-info">
+                            <span class="name">6 Meses</span>
+                            <span class="desc">Ahorra 10%</span>
+                        </div>
+                        <span class="plan-price">$45.00</span>
+                    </div>
+                    <div class="plan-card" onclick="selectPlan('12_MESES', this)">
+                        <div class="plan-info">
+                            <span class="name">1 Año</span>
+                            <span class="desc">Ahorra 20%</span>
+                        </div>
+                        <span class="plan-price">$80.00</span>
+                    </div>
+                </div>
+                <div id="paypal-button-container"></div>
+            </div>
+        </div>
+        </div>
         </div>
     </section>
 
@@ -897,8 +940,42 @@
             } catch (e) { console.error("Log action failed", e); }
         }
 
-        // Log visit on load
+        // Restore session on load
+        async function initSession() {
+            const token = localStorage.getItem('grepobot_token');
+            console.log("Iniciando sesión con token:", token);
+            if (!token) return;
+
+            try {
+                const res = await fetch(`${API}/check-license?token=${token}`);
+                const data = await res.json();
+                console.log("Respuesta check-license:", data);
+
+                if (data.valid) {
+                    currentUserId = data.usuarioId;
+                    currentUserToken = token;
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('user-display').textContent = data.username;
+                    updateLicenseStatus(data.daysLeft);
+                    renderPayPalButtons();
+                    logAction('SESSION_RESTORED', data.username);
+                } else {
+                    console.warn("Token no válido, limpiando...");
+                    localStorage.removeItem('grepobot_token');
+                }
+            } catch (e) {
+                console.error("Error al restaurar sesión:", e);
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('grepobot_token');
+            location.reload();
+        }
+
         logVisit();
+        initSession();
 
         function scrollToPortal() {
             document.getElementById('portal').scrollIntoView({ behavior: 'smooth' });
@@ -969,7 +1046,12 @@
 
         let pendingDownloadType = null;
 
-        function descargarBot(type) {
+        async function descargarBot(type) {
+            // Si el userId no está en memoria, intentamos recuperarlo del storage
+            if (!currentUserId && localStorage.getItem('grepobot_token')) {
+                await initSession();
+            }
+
             if (!currentUserId) return alert("Sesión expirada. Por favor, entra de nuevo.");
             pendingDownloadType = type;
             document.getElementById('download-modal').style.display = 'flex';
