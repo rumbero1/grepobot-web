@@ -236,6 +236,13 @@
     </div>
 
     <script>
+        function formatDate(val) {
+            if (!val) return 'N/A';
+            const num = Number(val);
+            const d = (!isNaN(num) && String(val).trim() !== "") ? new Date(num) : new Date(val);
+            return d.toLocaleString() === 'Invalid Date' ? 'Invalid Date' : d.toLocaleString();
+        }
+
         async function cargarDatos() {
             try {
                 const res = await fetch('/api/admin/stats');
@@ -263,7 +270,7 @@
                     tbLogins.innerHTML = data.logins.map(l => `
                         <tr>
                             <td>${l.username}</td>
-                            <td>${new Date(Number(l.fecha)).toLocaleString()}</td>
+                            <td>${formatDate(l.fecha)}</td>
                             <td><span class="badge ${l.success ? 'success' : 'danger'}">${l.success ? 'OK' : 'FAIL'}</span></td>
                         </tr>
                     `).join('');
@@ -277,7 +284,7 @@
                     tbDescargas.innerHTML = data.descargas.map(d => `
                         <tr>
                             <td>${d.username}</td>
-                            <td>${new Date(Number(d.fecha)).toLocaleString()}</td>
+                            <td>${formatDate(d.fecha)}</td>
                             <td>${d.variant}</td>
                         </tr>
                     `).join('');
@@ -290,7 +297,7 @@
                 } else {
                     tbVisitas.innerHTML = data.visitas.map(v => `
                         <tr>
-                            <td>${new Date(Number(v.fecha)).toLocaleString()}</td>
+                            <td>${formatDate(v.fecha)}</td>
                             <td>${v.ip || 'N/A'}</td>
                             <td style="font-size: 11px; color: #888;">${v.referrer || 'Directo'}</td>
                             <td style="font-size: 11px; color: #888;">${v.user_agent ? v.user_agent.substring(0, 50) + '...' : 'N/A'}</td>
@@ -306,7 +313,7 @@
                     tbActividad.innerHTML = data.actividad.map(a => `
                         <tr>
                             <td>${a.username || 'Anónimo'}</td>
-                            <td>${new Date(Number(a.fecha)).toLocaleString()}</td>
+                            <td>${formatDate(a.fecha)}</td>
                             <td><span class="badge success">${a.accion}</span></td>
                             <td style="font-size: 12px;">${a.detalles || '-'}</td>
                         </tr>
@@ -321,8 +328,8 @@
                     tbUsuarios.innerHTML = data.usuarios.map(u => `
                         <tr>
                             <td>${u.username}</td>
-                            <td>${new Date(Number(u.created_at)).toLocaleString()}</td>
-                            <td>${new Date(Number(u.license_expires_at)).toLocaleString()}</td>
+                            <td>${formatDate(u.created_at)}</td>
+                            <td>${formatDate(u.license_expires_at)}</td>
                             <td><strong style="color: ${u.diasRestantes > 0 ? '#4caf50' : '#ff5252'}">${u.diasRestantes}</strong></td>
                         </tr>
                     `).join('');
