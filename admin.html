@@ -130,7 +130,13 @@
 <body>
 
     <div class="container">
-        <h1>🔐 Admin Dashboard - GrepoBot</h1>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h1 style="margin-bottom: 0;">🔐 Admin Dashboard - GrepoBot</h1>
+            <div id="db-indicator"
+                style="background: #2a2a3a; padding: 10px 20px; border-radius: 10px; border: 1px solid #444; font-size: 14px;">
+                DB: <span id="db-mode" style="color: #4caf50; font-weight: bold;">Cargando...</span>
+            </div>
+        </div>
 
         <button class="btn" onclick="cargarDatos()" style="margin-bottom: 20px;">🔄 Actualizar</button>
 
@@ -235,6 +241,15 @@
                 const res = await fetch('/api/admin/stats');
                 const data = await res.json();
 
+                // Actualizar DB Mode
+                try {
+                    const healthRes = await fetch('/health');
+                    const healthData = await healthRes.json();
+                    const dbModeEl = document.getElementById('db-mode');
+                    dbModeEl.textContent = healthData.db.toUpperCase();
+                    dbModeEl.style.color = healthData.db === 'postgres' ? '#4caf50' : '#ff9800';
+                } catch (e) { console.error("Error fetching health", e); }
+
                 document.getElementById('total-usuarios').textContent = data.totalUsuarios || 0;
                 document.getElementById('total-descargas').textContent = data.totalDescargas || 0;
                 document.getElementById('licencias-activas').textContent = data.licenciasActivas || 0;
@@ -242,56 +257,76 @@
 
                 // Logins
                 const tbLogins = document.getElementById('tabla-logins').querySelector('tbody');
-                tbLogins.innerHTML = (data.logins || []).map(l => `
-                    <tr>
-                        <td>${l.username}</td>
-                        <td>${new Date(l.fecha).toLocaleString()}</td>
-                        <td><span class="badge ${l.success ? 'success' : 'danger'}">${l.success ? 'OK' : 'FAIL'}</span></td>
-                    </tr>
-                `).join('') || '<tr><td colspan="3">Sin datos</td></tr>';
+                if (!data.logins || data.logins.length === 0) {
+                    tbLogins.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">No hay registros de login todavía.</td></tr>';
+                } else {
+                    tbLogins.innerHTML = data.logins.map(l => `
+                        <tr>
+                            <td>${l.username}</td>
+                            <td>${new Date(Number(l.fecha)).toLocaleString()}</td>
+                            <td><span class="badge ${l.success ? 'success' : 'danger'}">${l.success ? 'OK' : 'FAIL'}</span></td>
+                        </tr>
+                    `).join('');
+                }
 
                 // Descargas
                 const tbDescargas = document.getElementById('tabla-descargas').querySelector('tbody');
-                tbDescargas.innerHTML = (data.descargas || []).map(d => `
-                    <tr>
-                        <td>${d.username}</td>
-                        <td>${new Date(d.fecha).toLocaleString()}</td>
-                        <td>${d.variant}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="3">Sin datos</td></tr>';
+                if (!data.descargas || data.descargas.length === 0) {
+                    tbDescargas.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">No hay descargas registradas.</td></tr>';
+                } else {
+                    tbDescargas.innerHTML = data.descargas.map(d => `
+                        <tr>
+                            <td>${d.username}</td>
+                            <td>${new Date(Number(d.fecha)).toLocaleString()}</td>
+                            <td>${d.variant}</td>
+                        </tr>
+                    `).join('');
+                }
 
                 // Visitas
                 const tbVisitas = document.getElementById('tabla-visitas').querySelector('tbody');
-                tbVisitas.innerHTML = (data.visitas || []).map(v => `
-                    <tr>
-                        <td>${new Date(v.fecha).toLocaleString()}</td>
-                        <td>${v.ip || 'N/A'}</td>
-                        <td style="font-size: 11px; color: #888;">${v.referrer || 'Directo'}</td>
-                        <td style="font-size: 11px; color: #888;">${v.user_agent ? v.user_agent.substring(0, 50) + '...' : 'N/A'}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
+                if (!data.visitas || data.visitas.length === 0) {
+                    tbVisitas.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Sin visitas registradas.</td></tr>';
+                } else {
+                    tbVisitas.innerHTML = data.visitas.map(v => `
+                        <tr>
+                            <td>${new Date(Number(v.fecha)).toLocaleString()}</td>
+                            <td>${v.ip || 'N/A'}</td>
+                            <td style="font-size: 11px; color: #888;">${v.referrer || 'Directo'}</td>
+                            <td style="font-size: 11px; color: #888;">${v.user_agent ? v.user_agent.substring(0, 50) + '...' : 'N/A'}</td>
+                        </tr>
+                    `).join('');
+                }
 
                 // Actividad
                 const tbActividad = document.getElementById('tabla-actividad').querySelector('tbody');
-                tbActividad.innerHTML = (data.actividad || []).map(a => `
-                    <tr>
-                        <td>${a.username || 'Anónimo'}</td>
-                        <td>${new Date(a.fecha).toLocaleString()}</td>
-                        <td><span class="badge success">${a.accion}</span></td>
-                        <td style="font-size: 12px;">${a.detalles || '-'}</td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
+                if (!data.actividad || data.actividad.length === 0) {
+                    tbActividad.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">Sin actividad reciente.</td></tr>';
+                } else {
+                    tbActividad.innerHTML = data.actividad.map(a => `
+                        <tr>
+                            <td>${a.username || 'Anónimo'}</td>
+                            <td>${new Date(Number(a.fecha)).toLocaleString()}</td>
+                            <td><span class="badge success">${a.accion}</span></td>
+                            <td style="font-size: 12px;">${a.detalles || '-'}</td>
+                        </tr>
+                    `).join('');
+                }
 
                 // Usuarios
                 const tbUsuarios = document.getElementById('tabla-usuarios').querySelector('tbody');
-                tbUsuarios.innerHTML = (data.usuarios || []).map(u => `
-                    <tr>
-                        <td>${u.username}</td>
-                        <td>${new Date(u.fecha_registro).toLocaleString()}</td>
-                        <td>${new Date(u.fecha_expiracion).toLocaleString()}</td>
-                        <td><strong style="color: ${u.diasRestantes > 0 ? '#4caf50' : '#ff5252'}">${u.diasRestantes}</strong></td>
-                    </tr>
-                `).join('') || '<tr><td colspan="4">Sin datos</td></tr>';
+                if (!data.usuarios || data.usuarios.length === 0) {
+                    tbUsuarios.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#888;">⚠️ Base de datos vacía. Los usuarios deben registrarse de nuevo.</td></tr>';
+                } else {
+                    tbUsuarios.innerHTML = data.usuarios.map(u => `
+                        <tr>
+                            <td>${u.username}</td>
+                            <td>${new Date(Number(u.created_at)).toLocaleString()}</td>
+                            <td>${new Date(Number(u.license_expires_at)).toLocaleString()}</td>
+                            <td><strong style="color: ${u.diasRestantes > 0 ? '#4caf50' : '#ff5252'}">${u.diasRestantes}</strong></td>
+                        </tr>
+                    `).join('');
+                }
 
             } catch (error) {
                 console.error('Error:', error);
@@ -304,3 +339,4 @@
 
 </body>
 
+</html>
