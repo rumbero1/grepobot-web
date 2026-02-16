@@ -5,7 +5,9 @@
 // @description  V11.80: Academy Global Search + Recruit Multi-Window + UI Fixes.
 // @author       TuNombre
 // @match        https://*.grepolis.com/game/*
-// @grant        none
+// @connect      grepobot-web.onrender.com
+// @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
 // @run-at       document-idle
 // ==/UserScript==
 
@@ -18,6 +20,39 @@
 
     const STORAGE_AUTH_KEY = 'grepobot_auth_token';
     let GREPOBOT_TOKEN = localStorage.getItem(STORAGE_AUTH_KEY);
+
+    // === HELPER: SOLICITUDES HTTP SEGURAS (Evita bloqueo CSP) ===
+    function safeFetch(url, options = {}) {
+        return new Promise((resolve, reject) => {
+            if (typeof GM_xmlhttpRequest !== 'undefined') {
+                GM_xmlhttpRequest({
+                    method: options.method || 'GET',
+                    url: url,
+                    headers: options.headers || {},
+                    data: options.body,
+                    onload: (res) => {
+                        if (res.status >= 200 && res.status < 300) {
+                            try { resolve(JSON.parse(res.responseText)); }
+                            catch (e) { resolve(res.responseText); }
+                        } else {
+                            reject(new Error(`HTTP ${res.status}: ${res.statusText}`));
+                        }
+                    },
+                    onerror: (err) => reject(new Error('Network Error (GM)')),
+                    ontimeout: () => reject(new Error('Timeout'))
+                });
+            } else {
+                // Fallback a fetch normal (si no hay soporte GM)
+                fetch(url, options)
+                    .then(res => {
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                        return res.json();
+                    })
+                    .then(data => resolve(data))
+                    .catch(err => reject(err));
+            }
+        });
+    }
 
     // === INYECTAR CSS DEL LOGIN ===
     const styleLogin = document.createElement('style');
@@ -86,12 +121,11 @@
             errDiv.textContent = "";
 
             try {
-                const res = await fetch(`${API_URL}/login`, {
+                const data = await safeFetch(`${API_URL}/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username: u, password: p })
                 });
-                const data = await res.json();
 
                 if (data.success) {
                     GREPOBOT_TOKEN = data.token;
@@ -132,13 +166,11 @@
             }
         } catch (e) { console.error("Cache error", e); }
 
-        // 2. Intentar Red (con reintentos)
-        for (let i = 0; i < 3; i++) {
+        // 2. Intentar Red (con reintentos para "Wake Up" de Render)
+        for (let i = 0; i < 5; i++) {
             try {
-                const res = await fetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                const data = await res.json();
+                console.log(`📡 Conectando servidor... Intento ${i + 1}/5`);
+                const data = await safeFetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
 
                 if (data.valid) {
                     // Guardar en caché si es válido
@@ -167,8 +199,8 @@
                     return false;
                 }
             } catch (e) {
-                console.warn(`Intento conexión ${i + 1}/3 fallido:`, e);
-                await new Promise(r => setTimeout(r, 2000)); // Esperar 2s
+                console.warn(`Intento conexión ${i + 1}/5 fallido:`, e);
+                await new Promise(r => setTimeout(r, 4000)); // Esperar 4s entre intentos
             }
         }
 
