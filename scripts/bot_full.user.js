@@ -25,6 +25,7 @@
     function safeFetch(url, options = {}) {
         return new Promise((resolve, reject) => {
             if (typeof GM_xmlhttpRequest !== 'undefined') {
+                console.log('🔒 Usando GM_xmlhttpRequest (Seguro)');
                 GM_xmlhttpRequest({
                     method: options.method || 'GET',
                     url: url,
@@ -200,6 +201,7 @@
                 }
             } catch (e) {
                 console.warn(`Intento conexión ${i + 1}/5 fallido:`, e);
+                window.LAST_ERROR = e.message;
                 await new Promise(r => setTimeout(r, 4000)); // Esperar 4s entre intentos
             }
         }
@@ -234,8 +236,8 @@
 
         if (reason === 'NETWORK') {
             title = '⚠️ SIN CONEXIÓN';
-            msg = 'No puedo conectar con el servidor del Bot.<br>Tu licencia podría estar bien, pero el servidor no responde.<br>Intenta recargar en unos minutos.';
-            btnText = 'REINTENTAR';
+            msg = `No puedo conectar con el servidor.<br>Posibles causas:<br>1. El servidor se está despertando (Render)<br>2. AdBlock bloqueando la conexión<br>3. No diste permisos a Tampermonkey<br><br><span style="font-size:12px;color:#aaa;">Detalle: ${window.LAST_ERROR || 'Desconocido'}</span>`;
+            btnText = 'REINTENTAR AHORA';
             btnLink = '#';
         } else {
             title = '⚔️ LICENCIA EXPIRADA';
@@ -246,8 +248,19 @@
 
         overlay.innerHTML = `
             <h1 style="color:${reason === 'NETWORK' ? '#ff9800' : '#ff5252'};font-size:40px;margin-bottom:20px;">${title}</h1>
-            <p style="font-size:18px;margin-bottom:30px;line-height:1.5;">${msg}</p>
-            <a href="${btnLink}" ${reason === 'NETWORK' ? 'onclick="location.reload()"' : 'target="_blank"'} style="padding:15px 30px;background:${reason === 'NETWORK' ? '#2196f3' : '#4caf50'};color:white;text-decoration:none;border-radius:50px;font-weight:bold;font-size:20px;cursor:pointer;">${btnText}</a>
+            <p style="font-size:16px;margin-bottom:30px;line-height:1.5;">${msg}</p>
+            <button id="btn-retry-block" style="padding:15px 30px;background:${reason === 'NETWORK' ? '#2196f3' : '#4caf50'};color:white;border:none;border-radius:50px;font-weight:bold;font-size:20px;cursor:pointer;">${btnText}</button>
+        `;
+        document.body.appendChild(overlay);
+
+        document.getElementById('btn-retry-block').onclick = () => {
+             if(reason === 'NETWORK') {
+                 overlay.remove();
+                 checkLicense();
+             } else {
+                 window.open(btnLink, '_blank');
+             }
+        };
         `;
         document.body.appendChild(overlay);
     }
