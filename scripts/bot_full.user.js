@@ -254,15 +254,13 @@
         document.body.appendChild(overlay);
 
         document.getElementById('btn-retry-block').onclick = () => {
-             if(reason === 'NETWORK') {
-                 overlay.remove();
-                 checkLicense();
-             } else {
-                 window.open(btnLink, '_blank');
-             }
+            if (reason === 'NETWORK') {
+                overlay.remove();
+                checkLicense();
+            } else {
+                window.open(btnLink, '_blank');
+            }
         };
-        `;
-        document.body.appendChild(overlay);
     }
 
     // Iniciar validación
