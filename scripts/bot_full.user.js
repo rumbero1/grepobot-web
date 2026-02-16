@@ -21,6 +21,9 @@
     const STORAGE_AUTH_KEY = 'grepobot_auth_token';
     let GREPOBOT_TOKEN = localStorage.getItem(STORAGE_AUTH_KEY);
 
+    const CACHE_KEY = 'grepobot_license_cache';
+    const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 Horas
+
     // === HELPER: SOLICITUDES HTTP SEGURAS (Evita bloqueo CSP) ===
     function safeFetch(url, options = {}) {
         return new Promise((resolve, reject) => {
@@ -167,11 +170,26 @@
             }
         } catch (e) { console.error("Cache error", e); }
 
-        // 2. Intentar Red (con reintentos para "Wake Up" de Render)
-        for (let i = 0; i < 5; i++) {
+        // 2. Intentar Red (con reintentos para "Wake Up" de Render - HASTA 60 SEGUNDOS)
+        const showConnecting = (n) => {
+            let t = document.getElementById('bot-connecting-toast');
+            if (!t) {
+                t = document.createElement('div');
+                t.id = 'bot-connecting-toast';
+                t.style.cssText = 'position:fixed;top:10px;right:10px;background:rgba(0,0,0,0.8);color:white;padding:10px 20px;border-radius:5px;z-index:100001;font-size:12px;border:1px solid #444;';
+                document.body.appendChild(t);
+            }
+            t.textContent = `📡 Despertando servidor... (${n}/10)`;
+        };
+
+        for (let i = 0; i < 10; i++) {
             try {
-                console.log(`📡 Conectando servidor... Intento ${i + 1}/5`);
+                showConnecting(i + 1);
+                console.log(`📡 Conectando servidor... Intento ${i + 1}/10`);
                 const data = await safeFetch(`${API_URL}/check-license?token=${GREPOBOT_TOKEN}`);
+
+                const t = document.getElementById('bot-connecting-toast');
+                if (t) t.remove();
 
                 if (data.valid) {
                     // Guardar en caché si es válido
@@ -200,11 +218,14 @@
                     return false;
                 }
             } catch (e) {
-                console.warn(`Intento conexión ${i + 1}/5 fallido:`, e);
+                console.warn(`Intento conexión ${i + 1}/10 fallido:`, e);
                 window.LAST_ERROR = e.message;
-                await new Promise(r => setTimeout(r, 4000)); // Esperar 4s entre intentos
+                await new Promise(r => setTimeout(r, 6000)); // Esperar 6s entre intentos (Total 60s)
             }
         }
+
+        const t = document.getElementById('bot-connecting-toast');
+        if (t) t.remove();
 
         // 3. Fallo total de red -> Usar caché de emergencia o bloquear con mensaje de red
         // Si llegamos aquí es porque falló la conexión 3 veces.
