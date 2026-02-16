@@ -814,54 +814,59 @@
     </section>
 
     <section id="portal">
-        <div class="glass-card">
-            <div id="login-form">
-                <div class="mode-selector">
-                    <button id="mode-login" class="mode-btn active" onclick="setMode('login')">Entrar</button>
-                    <button id="mode-registro" class="mode-btn" onclick="setMode('registro')">Registrarse</button>
+        <div class="portal-container">
+            <!-- COLUMNA IZQUIERDA: LOGIN / DASHBOARD -->
+            <div class="glass-card">
+                <div id="login-form">
+                    <div class="mode-selector">
+                        <button id="mode-login" class="mode-btn active" onclick="setMode('login')">Entrar</button>
+                        <button id="mode-registro" class="mode-btn" onclick="setMode('registro')">Registrarse</button>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Usuario / Apodo</label>
+                        <input type="text" id="user" placeholder="Ej: AlejandroMagno">
+                    </div>
+                    <div id="email-group" class="input-group" style="display:none;">
+                        <label>Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="tu@email.com">
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña</label>
+                        <input type="password" id="pass" placeholder="••••••••">
+                    </div>
+                    <button id="btn-main" class="cta-button" style="width:100%" onclick="acceder()">Entrar al
+                        Portal</button>
+                    <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 15px;">
+                        ⚠️ Si tenías cuenta antes del 13 de Febrero, por favor <b>regístrate de nuevo</b>.</p>
+                    <div id="msg-login" class="alert"></div>
                 </div>
 
-                <div class="input-group">
-                    <label>Usuario / Apodo</label>
-                    <input type="text" id="user" placeholder="Ej: AlejandroMagno">
+                <div id="dashboard" style="display:none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
+                        <h2 style="color:var(--primary);">Comandante <span id="user-display"></span></h2>
+                        <button onclick="cerrarSesion()"
+                            style="background: none; border: 1px solid #444; color: #888; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">Cerrar
+                            Sesión</button>
+                    </div>
+                    <div id="status-licencia" class="alert success" style="display:block; margin-bottom:30px;">
+                        Cargando estado...</div>
+
+                    <h3 style="margin-bottom:15px; font-size:18px;">Instalación</h3>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="cta-button" style="background:#2196F3; box-shadow: 0 0 15px rgba(33,150,243,0.4)"
+                            onclick="descargarBot('tampermonkey')">📥 Instalar en Tampermonkey</button>
+                        <button class="cta-button"
+                            style="background:#444; box-shadow:none; font-size:14px; padding:12px;"
+                            onclick="descargarBot('direct')">💾 Descargar .js</button>
+                    </div>
                 </div>
-                <div id="email-group" class="input-group" style="display:none;">
-                    <label>Correo Electrónico</label>
-                    <input type="email" id="email" placeholder="tu@email.com">
-                </div>
-                <div class="input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="pass" placeholder="••••••••">
-                </div>
-                <button id="btn-main" class="cta-button" style="width:100%" onclick="acceder()">Entrar al
-                    Portal</button>
-                <p style="font-size: 11px; color: var(--text-muted); text-align: center; margin-top: 15px;">
-                    ⚠️ Si tenías cuenta antes del 13 de Febrero, por favor <b>regístrate de nuevo</b> (Base de datos
-                    actualizada).</p>
-                <div id="msg-login" class="alert"></div>
             </div>
 
-            <div id="dashboard" style="display:none;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 20px;">
-                    <h2 style="color:var(--primary);">Comandante <span id="user-display"></span></h2>
-                    <button onclick="cerrarSesion()"
-                        style="background: none; border: 1px solid #444; color: #888; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px;">Cerrar
-                        Sesión</button>
-                </div>
-                <div id="status-licencia" class="alert success" style="display:block; margin-bottom:30px;">
-                    Cargando estado...</div>
-
-                <h3 style="margin-bottom:15px; font-size:18px;">Instalación</h3>
-                <div style="display:flex; flex-direction:column; gap:10px;">
-                    <button class="cta-button" style="background:#2196F3; box-shadow: 0 0 15px rgba(33,150,243,0.4)"
-                        onclick="descargarBot('tampermonkey')">📥 Instalar en Tampermonkey</button>
-                    <button class="cta-button" style="background:#444; box-shadow:none; font-size:14px; padding:12px;"
-                        onclick="descargarBot('direct')">💾 Descargar .js</button>
-                </div>
-            </div>
-
-            <div id="payment-section" style="border-left: 1px solid var(--glass-border); padding-left: 40px;">
-                <h3 style="color:var(--gold); margin-bottom:20px;">💎 Renovar Licencia</h3>
+            <!-- COLUMNA DERECHA: PRECIOS / PAGOS -->
+            <div class="glass-card" id="payment-section">
+                <h3 style="color:var(--gold); margin-bottom:20px; text-align: center;">💎 Planes y Licencias</h3>
                 <div class="plans-container">
                     <div class="plan-card selected" onclick="selectPlan('1_MES', this)">
                         <div class="plan-info">
@@ -885,10 +890,9 @@
                         <span class="plan-price">$80.00</span>
                     </div>
                 </div>
-                <div id="paypal-button-container"></div>
+                <!-- Botones de PayPal se renderizan aquí -->
+                <div id="paypal-button-container" style="margin-top: 20px;"></div>
             </div>
-        </div>
-        </div>
         </div>
     </section>
 
