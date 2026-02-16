@@ -698,72 +698,157 @@
     </section>
 
     <section id="manual" class="guide-section">
-        <h2 class="section-title">Manual de Operaciones Estratégicas</h2>
+        <h2 class="section-title">📘 Manual de Usuario - GrepoBot V11.80 Ultimate</h2>
+
         <div class="manual-container">
-            <!-- Regla de Oro -->
+            <!-- TIP -->
             <div class="glass-card"
-                style="margin-bottom: 50px; border-left: 5px solid var(--gold); background: rgba(255, 215, 0, 0.05);">
-                <h3 style="color: var(--gold); margin-bottom: 10px;">🛡️ Regla de Oro: El Sistema de Verificación</h3>
-                <p>Para que el bot funcione, siempre debes seguir este flujo en cada módulo:
-                    <br><b>1. Abrir la ventana en el juego</b> -> <b>2. Pulsar el Ojo (👁️) para verificar</b> -> <b>3.
-                        Pulsar Inicio</b>.
-                </p>
+                style="margin-bottom: 30px; text-align: center; border-left: 4px solid var(--primary);">
+                <p>💡 <b>TIP:</b> Este documento explica paso a paso cómo usar todas las funciones.</p>
             </div>
 
-            <!-- Módulo: Planner -->
+            <!-- 1. Primeros Pasos -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>1. Programador de Ataques (Planner)</h3>
-                    <p>Ideal para cuadrar refuerzos al segundo exacto.
-                        <br>• Abre la ventana de <b>Ataques Entrantes</b> en Grepolis.
-                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña Planner del bot.
-                        <br>• Cuando salga el check verde, dale a <b>Inicio</b>.
-                        <br>• El bot capturará los tiempos y enviará las tropas automáticamente.
+                    <h3>🚀 1. Primeros Pasos</h3>
+
+                    <h4 style="color:var(--primary); margin:15px 0 5px;">Inicio de Sesión</h4>
+                    <p>Al cargar Grepolis, verás una pantalla oscura de login.<br>
+                        1. Introduce tu <b>Usuario y Contraseña</b> (los del portal web).<br>
+                        2. Pulsa <b>Conectar</b>.<br>
+                        3. Si tienes licencia activa, el panel del bot aparecerá en la esquina inferior izquierda.</p>
+
+                    <h4 style="color:var(--primary); margin:15px 0 5px;">El Panel Principal</h4>
+                    <p>Es tu centro de control (puedes moverlo arrastrando la barra superior).<br>
+                        • <b>Barra Superior:</b> Versión, Minimizar (_) o Cerrar (X).<br>
+                        • <b>Pestañas:</b> Navega por PLAN, DODGE, CAVE, ETC.<br>
+                        • <b>Estado:</b> Muestra la hora del servidor en verde.</p>
+                </div>
+                <div class="manual-img">
+                    <img src="assets/bot_preview.png" alt="Panel Principal">
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 60px; font-size: 28px;">🛠️ 2. Módulos y Funciones</h2>
+
+            <!-- PLAN -->
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>⚔️ PLAN (Planificador de Ataques)</h3>
+                    <p>Usa este módulo para clavar ataques y apoyos al segundo exacto.<br><br>
+                        <b>Cómo funciona:</b><br>
+                        1. Ten abierto el Planificador de Ataques del juego.<br>
+                        2. Configura <b>Seg. Obj</b> (segundo de impacto) y <b>Antelación</b>.<br>
+                        3. Elige modo: Auto, Forzar Ataque o Forzar Defensa.<br>
+                        4. Pulsa <b>🔍 Capturar</b> y luego el botón <b>🚀 INICIAR</b> que aparecerá.
                     </p>
                 </div>
                 <div class="manual-img"><img src="assets/gallery/planner.png" alt="Planner"></div>
             </div>
 
-            <!-- Módulo: AutoDodge -->
+            <!-- DODGE -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>2. Auto-Dodge (Esquiva Automática)</h3>
-                    <p>Salva tus tropas de ataques enemigos mientras duermes.
-                        <br>• Abre la ventana de <b>Tropas de la Ciudad</b> o el Cuartel.
-                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña Dodge.
-                        <br>• Pulsa <b>Inicio</b>. El bot sacará las tropas justo antes del impacto y las traerá de
-                        vuelta un segundo después.
+                    <h3>🏃 DODGE (Esquiva Automática)</h3>
+                    <p>Salva tus tropas de ataques enemigos sacándolas y volviéndolas a meter.<br><br>
+                        • <b>Hora de Vuelta:</b> Hora exacta de regreso (HH:MM:SS).<br>
+                        • <b>Corrección:</b> Ajuste fino en segundos (ej: -1).<br>
+                        👉 Abre ventana de ataque, perfila tropas y pulsa <b>👁️ Verificar</b>. NO cierres la ventana.
                     </p>
                 </div>
                 <div class="manual-img"><img src="assets/bot_preview.png" alt="Dodge"></div>
             </div>
 
-            <!-- Módulo: Cueva -->
+            <!-- CAVE -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>3. Gestión de Plata (Cueva)</h3>
-                    <p>Protege tus recursos de espías enemigos.
-                        <br>• Abre la <b>Vista General de Cuevas</b> (donde salen todas tus ciudades).
-                        <br>• Pulsa el <b>Ojo (👁️)</b> en el módulo de Cueva.
-                        <br>• Pulsa <b>Inicio</b>. El bot guardará la plata automáticamente según tu configuración.
-                    </p>
+                    <h3>🏛️ CAVE (Auto Cueva)</h3>
+                    <p>Guarda recursos en la cueva automáticamente.<br><br>
+                        • <b>Min Plata:</b> Mínimo a conservar en almacén.<br>
+                        • <b>Intervalo:</b> Cada cuántos minutos revisa.<br>
+                        👉 Requiere tener la ventana de la Cueva abierta o minimizada.</p>
                 </div>
-                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Cueva"></div>
+                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Cave"></div>
             </div>
 
-            <!-- Módulo: Construcción y Tropas -->
+            <!-- FARM -->
             <div class="manual-step">
                 <div class="manual-text">
-                    <h3>4. Reclutamiento y Edificios</h3>
-                    <p>Mantén tu imperio creciendo 24/7.
-                        <br>• Abre el <b>Senado</b> (para edificios) o <b>Cuartel/Puerto</b> (para tropas).
-                        <br>• Pulsa el <b>Ojo (👁️)</b> en la pestaña correspondiente.
-                        <br>• Pulsa <b>Inicio</b>. El bot gestionará las colas de construcción y reclutamiento siempre
-                        que tengas recursos.
+                    <h3>🚜 FARM (Auto Farm Capitán)</h3>
+                    <p>Recoge recursos de todas tus aldeas agrícolas automáticamente.<br><br>
+                        • <b>Intervalo:</b> Elige cada cuánto tiempo (5, 10, 20 o 40 min).<br>
+                        👉 Funciona simulando el clic del Capitán en la vista general.</p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/autobuild.png" alt="Farm"></div>
+            </div>
+
+            <!-- BUILD -->
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>🏗️ BUILD (Auto Construcción)</h3>
+                    <p>Sube edificios automáticamente.<br><br>
+                        • Marca los edificios deseados.<br>
+                        • <b>Límite:</b> Nivel máximo deseado (ej: 99 para infinito).<br>
+                        👉 Requiere tener el Senado abierto para detectar niveles.</p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/autobuild.png" alt="Build"></div>
+            </div>
+
+            <!-- RECRUIT -->
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>⚔️ RECRUIT (Auto Reclutamiento)</h3>
+                    <p>Crea tropas y barcos constantemente.<br><br>
+                        • Marca las tropas (Honderos, Birremes, etc.).<br>
+                        • <b>Cantidad:</b> Cuántas añadir a la cola por vez.<br>
+                        • <b>Límite:</b> Total máximo de unidades (opcional).</p>
+                </div>
+                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Recruit"></div>
+            </div>
+
+            <!-- CULT y ACAD -->
+            <div class="manual-step">
+                <div class="manual-text">
+                    <h3>🎭 CULT & 📚 ACAD</h3>
+                    <p><b>Auto Cultura:</b> Organiza Festivales, Juegos o Marchas si hay recursos.<br>
+                        <b>Auto Academia:</b> Investiga tecnologías marcadas automáticamente.<br>
+                        👉 Automatización simple y efectiva.
                     </p>
                 </div>
-                <div class="manual-img"><img src="assets/gallery/autobuild.png" alt="Construccion"></div>
+                <div class="manual-img"><img src="assets/gallery/menu.png" alt="Cult Acad"></div>
             </div>
+
+            <!-- AUTO -->
+            <div class="manual-step" style="background: rgba(255, 215, 0, 0.05); border: 1px solid var(--gold);">
+                <div class="manual-text">
+                    <h3 style="color:var(--gold);">🤖 AUTO (Ciclo Automático)</h3>
+                    <p>¡La función más potente! Rota por todos los módulos seleccionados.<br><br>
+                        • <b>Ciclo (min):</b> Tiempo para dar una "vuelta completa".<br>
+                        • <b>Tareas:</b> Marca qué módulos debe revisar (Farm, Build...).<br>
+                        👉 Al activar el Interruptor Maestro, el bot trabajará solo.</p>
+                </div>
+                <div class="manual-img"><img src="assets/bot_preview.png" alt="Auto"></div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="glass-card" style="margin-top: 50px;">
+                <h3 style="margin-bottom: 20px; color: var(--gold);">❓ Preguntas Frecuentes</h3>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color:var(--primary); margin-bottom:5px;">¿Debo dejar el navegador abierto?</h4>
+                    <p>Sí. El bot funciona sobre tu navegador. Si cierras la pestaña, el bot se detiene.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color:var(--primary); margin-bottom:5px;">¿Es seguro?</h4>
+                    <p>El bot usa tiempos de espera humanos y simulaciones de clic para ser lo más indetectable posible.
+                        Sin embargo, úsalo siempre con responsabilidad.</p>
+                </div>
+                <div>
+                    <h4 style="color:var(--primary); margin-bottom:5px;">¿Qué pasa si mi licencia expira?</h4>
+                    <p>El bot te avisará y pausará sus funciones. Puedes renovar instantáneamente desde el panel web.
+                    </p>
+                </div>
+            </div>
+
         </div>
     </section>
 
