@@ -860,7 +860,7 @@
                 </div>
             </div>
 
-            <div style="border-left: 1px solid var(--glass-border); padding-left: 40px;">
+            <div id="payment-section" style="border-left: 1px solid var(--glass-border); padding-left: 40px;">
                 <h3 style="color:var(--gold); margin-bottom:20px;">💎 Renovar Licencia</h3>
                 <div class="plans-container">
                     <div class="plan-card selected" onclick="selectPlan('1_MES', this)">
@@ -956,6 +956,8 @@
                     currentUserToken = token;
                     document.getElementById('login-form').style.display = 'none';
                     document.getElementById('dashboard').style.display = 'block';
+                    document.getElementById('dashboard').style.display = 'block';
+                    // document.getElementById('payment-section').style.display = 'block'; // Ya es visible siempre
                     document.getElementById('user-display').textContent = data.username;
                     updateLicenseStatus(data.daysLeft);
                     renderPayPalButtons();
@@ -971,6 +973,8 @@
 
         function cerrarSesion() {
             localStorage.removeItem('grepobot_token');
+            localStorage.removeItem('grepobot_token');
+            // document.getElementById('payment-section').style.display = 'none'; // Ya es visible siempre
             location.reload();
         }
 
@@ -1023,7 +1027,13 @@
                     updateLicenseStatus(data.daysLeft); renderPayPalButtons();
                     logAction(isRegistro ? 'REGISTER_SUCCESS' : 'LOGIN_SUCCESS', data.username);
                 } else {
-                    msg.textContent = data.error; msg.className = "alert error"; msg.style.display = "block";
+                    let errorMsg = data.error;
+                    if (data.error === "Credenciales inválidas") {
+                        errorMsg = "Contraseña incorrecta o usuario no existe. ¿Quizás necesitas registrarte?";
+                    }
+                    msg.innerHTML = errorMsg;
+                    msg.className = "alert error";
+                    msg.style.display = "block";
                     logAction(isRegistro ? 'REGISTER_FAIL' : 'LOGIN_FAIL', data.error);
                 }
             } catch (err) { alert("Error de conexión con el Cuartel General"); }
@@ -1098,6 +1108,18 @@
         function renderPayPalButtons() {
             const container = document.getElementById('paypal-button-container');
             container.innerHTML = '';
+
+            // Si no está logueado, mostrar botón de login
+            if (!currentUserId) {
+                container.innerHTML = `
+                    <button class="cta-button" style="width:100%; background:var(--glass-bg); border:1px solid var(--primary);" 
+                        onclick="scrollToPortal()">
+                        🔒 Inicia Sesión para Comprar
+                    </button>
+                `;
+                return;
+            }
+
             if (typeof paypal === 'undefined') {
                 console.log("PayPal SDK no cargado aún...");
                 setTimeout(renderPayPalButtons, 2000);
