@@ -16,12 +16,108 @@
     let LICENSE_VALID = false;
     let DAYS_LEFT = 0;
 
-    async function checkLicense() {
-        const CACHE_KEY = 'bot_license_cache';
-        const CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 Horas de memoria
+    const STORAGE_AUTH_KEY = 'grepobot_auth_token';
+    let GREPOBOT_TOKEN = localStorage.getItem(STORAGE_AUTH_KEY);
 
-        if (typeof GREPOBOT_TOKEN === 'undefined') {
-            alert("GrepoBot: Token no encontrado. Reinstala el bot desde el portal.");
+    // === INYECTAR CSS DEL LOGIN ===
+    const styleLogin = document.createElement('style');
+    styleLogin.textContent = `
+        #gptbot-login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100000;
+            display: flex; justifyContent: center; alignItems: center;
+            backdrop-filter: blur(5px);
+        }
+        #gptbot-login-panel {
+            background: #1e1e2f; border: 1px solid #444;
+            border-radius: 12px; padding: 30px; width: 350px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5); font-family: 'Segoe UI', sans-serif;
+            color: #fff; text-align: center;
+        }
+        #gptbot-login-panel h2 { margin-top: 0; color: #60a5fa; margin-bottom: 20px; font-size: 24px; }
+        #gptbot-login-panel input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            border-radius: 6px; border: 1px solid #444; box-sizing: border-box;
+            background: #2b2b3d; color: #fff; font-size: 14px; outline: none;
+        }
+        #gptbot-login-panel input:focus { border-color: #60a5fa; }
+        #gptbot-login-panel button {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white; border: none; width: 100%;
+            padding: 12px; border-radius: 6px; cursor: pointer;
+            font-size: 16px; margin-top: 10px; font-weight: bold;
+            transition: transform 0.1s;
+        }
+        #gptbot-login-panel button:hover { transform: scale(1.02); }
+        #login-error { color: #ef4444; font-size: 13px; margin-top: 15px; min-height: 20px; }
+    `;
+    document.head.appendChild(styleLogin);
+
+    // === FUNCIÓN LOGIN ===
+    async function iniciarLogin() {
+        if (document.getElementById('gptbot-login-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'gptbot-login-overlay';
+        overlay.innerHTML = `
+            <div id="gptbot-login-panel">
+                <h2>🔐 GrepoBot V11.80</h2>
+                <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Inicia sesión con tu cuenta del portal</p>
+                <input type="text" id="bot-user" placeholder="Usuario">
+                <input type="password" id="bot-pass" placeholder="Contraseña">
+                <button id="btn-login-bot">Conectar</button>
+                <div id="login-error"></div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        const btn = document.getElementById('btn-login-bot');
+        const userIn = document.getElementById('bot-user');
+        const passIn = document.getElementById('bot-pass');
+        const errDiv = document.getElementById('login-error');
+
+        async function doLogin() {
+            const u = userIn.value;
+            const p = passIn.value;
+            if (!u || !p) { errDiv.textContent = "Ingresa usuario y contraseña"; return; }
+
+            btn.disabled = true;
+            btn.textContent = "Verificando...";
+            errDiv.textContent = "";
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: u, password: p })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    GREPOBOT_TOKEN = data.token;
+                    localStorage.setItem(STORAGE_AUTH_KEY, data.token);
+                    overlay.remove();
+                    checkLicense(); // Re-check license logic with new token
+                } else {
+                    errDiv.textContent = data.error || "Error de credenciales";
+                    btn.disabled = false;
+                    btn.textContent = "Conectar";
+                }
+            } catch (e) {
+                errDiv.textContent = "Error de conexión con el servidor";
+                console.error(e);
+                btn.disabled = false;
+                btn.textContent = "Conectar";
+            }
+        }
+
+        btn.onclick = doLogin;
+        passIn.onkeypress = (e) => { if (e.key === 'Enter') doLogin(); };
+    }
+
+    async function checkLicense() {
+        if (!GREPOBOT_TOKEN) {
+            iniciarLogin();
             return false;
         }
 
@@ -60,9 +156,10 @@
                     LICENSE_VALID = false;
 
                     if (data.reason === 'INVALID_TOKEN' || data.reason === 'NO_TOKEN') {
-                        // Token inválido (posible reinicio de BD o hack)
-                        alert("⚠️ ERROR DE SESIÓN DE GREPOBOT ⚠️\n\nTu token no es reconocido por el servidor.\nEsto suele pasar si el servidor se reinició o tu cuenta fue borrada.\n\nSOLUCIÓN: Ve al portal y REINSTALA el script desde tu cuenta.");
-                        blockUI('INVALID'); // Nuevo tipo de bloqueo
+                        // Token inválido, pedir login de nuevo
+                        localStorage.removeItem(STORAGE_AUTH_KEY);
+                        GREPOBOT_TOKEN = null;
+                        iniciarLogin();
                     } else {
                         // Expirado legítimamente
                         blockUI('EXPIRED');
