@@ -268,7 +268,7 @@ app.get('/api/descargar/:usuarioId/:token/:variant/GrepoBot.user.js', async (req
     await db.run('INSERT INTO descargas (usuario_id, fecha, ip, variant) VALUES (?,?,?,?)', [user.id, nowMs(), ip, variant]);
 
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Content-Disposition', 'attachment; filename="GrepoBot.user.js"');
+    res.setHeader('Content-Disposition', 'inline; filename="GrepoBot.user.js"');
     res.send(injection + code);
 });
 
@@ -368,6 +368,40 @@ app.get('/api/admin/stats', async (req, res) => {
     } catch (e) {
         console.error("Error stats:", e);
         sendJson(res, { error: 'Error obteniendo stats' });
+    }
+});
+
+app.post('/api/admin/delete-record', async (req, res) => {
+    const { table, id } = req.body;
+    const allowedTables = ['usuarios', 'logins', 'descargas', 'visitas', 'actividad'];
+
+    if (!allowedTables.includes(table)) {
+        return sendJson(res, { success: false, error: 'Tabla no permitida' });
+    }
+
+    try {
+        await db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
+        sendJson(res, { success: true });
+    } catch (e) {
+        console.error("Error deleting record:", e);
+        sendJson(res, { success: false, error: 'Error al borrar' });
+    }
+});
+
+app.post('/api/admin/delete-record', async (req, res) => {
+    const { table, id } = req.body;
+    const allowedTables = ['usuarios', 'logins', 'descargas', 'visitas', 'actividad'];
+
+    if (!allowedTables.includes(table)) {
+        return sendJson(res, { success: false, error: 'Tabla no permitida' });
+    }
+
+    try {
+        await db.run(`DELETE FROM ${table} WHERE id = ?`, [id]);
+        sendJson(res, { success: true });
+    } catch (e) {
+        console.error("Error deleting record:", e);
+        sendJson(res, { success: false, error: 'Error al borrar' });
     }
 });
 
