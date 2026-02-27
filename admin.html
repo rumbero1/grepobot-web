@@ -121,8 +121,17 @@
             font-weight: bold;
         }
 
-        .btn:hover {
-            background: #45a049;
+        .btn.danger {
+            background: #ff5252;
+        }
+
+        .btn.danger:hover {
+            background: #e53935;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
         }
     </style>
 </head>
@@ -168,6 +177,7 @@
                             <th>Usuario</th>
                             <th>Fecha</th>
                             <th>Status</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -182,6 +192,7 @@
                             <th>Usuario</th>
                             <th>Fecha</th>
                             <th>Variant</th>
+                            <th>Acción</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -198,6 +209,7 @@
                         <th>IP</th>
                         <th>Referrer</th>
                         <th>User Agent</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -213,6 +225,7 @@
                         <th>Fecha/Hora</th>
                         <th>Acción</th>
                         <th>Detalles</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -228,6 +241,7 @@
                         <th>Registro</th>
                         <th>Expiración</th>
                         <th>Días</th>
+                        <th>Acción</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -272,6 +286,7 @@
                             <td>${l.username}</td>
                             <td>${formatDate(l.fecha)}</td>
                             <td><span class="badge ${l.success ? 'success' : 'danger'}">${l.success ? 'OK' : 'FAIL'}</span></td>
+                            <td><button class="btn danger btn-sm" onclick="borrarRegistro('logins', ${l.id})">🗑️</button></td>
                         </tr>
                     `).join('');
                 }
@@ -286,6 +301,7 @@
                             <td>${d.username}</td>
                             <td>${formatDate(d.fecha)}</td>
                             <td>${d.variant}</td>
+                            <td><button class="btn danger btn-sm" onclick="borrarRegistro('descargas', ${d.id})">🗑️</button></td>
                         </tr>
                     `).join('');
                 }
@@ -301,6 +317,7 @@
                             <td>${v.ip || 'N/A'}</td>
                             <td style="font-size: 11px; color: #888;">${v.referrer || 'Directo'}</td>
                             <td style="font-size: 11px; color: #888;">${v.user_agent ? v.user_agent.substring(0, 50) + '...' : 'N/A'}</td>
+                            <td><button class="btn danger btn-sm" onclick="borrarRegistro('visitas', ${v.id})">🗑️</button></td>
                         </tr>
                     `).join('');
                 }
@@ -316,6 +333,7 @@
                             <td>${formatDate(a.fecha)}</td>
                             <td><span class="badge success">${a.accion}</span></td>
                             <td style="font-size: 12px;">${a.detalles || '-'}</td>
+                            <td><button class="btn danger btn-sm" onclick="borrarRegistro('actividad', ${a.id})">🗑️</button></td>
                         </tr>
                     `).join('');
                 }
@@ -331,12 +349,33 @@
                             <td>${formatDate(u.created_at)}</td>
                             <td>${formatDate(u.license_expires_at)}</td>
                             <td><strong style="color: ${u.diasRestantes > 0 ? '#4caf50' : '#ff5252'}">${u.diasRestantes}</strong></td>
+                            <td><button class="btn danger btn-sm" onclick="borrarRegistro('usuarios', ${u.id})">🗑️</button></td>
                         </tr>
                     `).join('');
                 }
 
             } catch (error) {
                 console.error('Error:', error);
+            }
+        }
+
+        async function borrarRegistro(table, id) {
+            if (!confirm(`¿Estás seguro de que quieres borrar este registro de la tabla ${table}?`)) return;
+
+            try {
+                const res = await fetch('/api/admin/delete-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ table, id })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    cargarDatos();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (e) {
+                alert('Error de conexión');
             }
         }
 
