@@ -686,7 +686,18 @@
 
             if (diff <= antelacion) {
                 clearInterval(intervalo);
+                document.getElementById('resultado').innerHTML = `<div style="color:#ff0;">🎲 Buscando paridad...</div>`;
 
+                while (botActivo) {
+                    const st = getServerTime();
+                    const diff = orden.timestamp - st;
+
+                    if (diff % 2 === 0 || diff <= 0) {
+                        break;
+                    }
+                    document.getElementById('resultado').innerHTML = `<div style="color:#ff0;">🎲 Buscando paridad... (Target: ${orden.timestamp} - ST: ${st} = Diff: ${diff})</div>`;
+                    await esperar(100);
+                }
                 const fila = await buscarFilaEnPaginas(orden);
 
                 if (!fila) {
