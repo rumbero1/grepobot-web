@@ -1603,9 +1603,12 @@
 
         while (botActivo) {
             const st = getServerTime();
-            if ((targetTimestamp - st) % 2 === 0) {
+            const diff = targetTimestamp - st;
+
+            if (diff % 2 === 0 || diff <= 0) {
                 break;
             }
+            resultado.innerHTML = `<div style="color:#ff0;">🎲 Buscando paridad... (Target: ${targetTimestamp} - Reloj: ${st} = Diferencia: ${diff})</div>`;
             await esperar(100);
         }
 
