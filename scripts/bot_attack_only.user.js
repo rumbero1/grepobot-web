@@ -379,16 +379,30 @@
         }
     }
 
+    let _serverTimeOffset = null;
+    let _lastDomTimeStr = null;
+
     function getServerTime() {
+        const nowSec = Math.floor(Date.now() / 1000);
         const el = document.querySelector('.server_time_area');
-        if (!el) return Math.floor(Date.now() / 1000);
 
-        const txt = el.textContent.trim();
-        const m = txt.match(/(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-        if (!m) return Math.floor(Date.now() / 1000);
+        if (el) {
+            const txt = el.textContent.trim();
+            if (txt !== _lastDomTimeStr) {
+                _lastDomTimeStr = txt;
+                const m = txt.match(/(\d{1,2}):(\d{2}):(\d{2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+                if (m) {
+                    const [_, h, min, s, d, mon, y] = m.map(Number);
+                    const st = Math.floor(new Date(y, mon - 1, d, h, min, s).getTime() / 1000);
+                    _serverTimeOffset = st - nowSec;
+                }
+            }
+        }
 
-        const [_, h, min, s, d, mon, y] = m.map(Number);
-        return Math.floor(new Date(y, mon - 1, d, h, min, s).getTime() / 1000);
+        if (_serverTimeOffset !== null) {
+            return nowSec + _serverTimeOffset;
+        }
+        return nowSec;
     }
 
     async function capturarAtaques() {
